@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "stm32f4xx_hal_conf.h": "c",
+        "stm32f4xx_hal.h": "c",
+        "lcd.h": "c",
+        "hw_def.h": "c",
+        "stm32f407xx.h": "c",
+        "ili9341_reg.h": "c",
+        "stm32f4xx_hal_rcc.h": "c",
+        "stm32f4xx_hal_rcc_ex.h": "c",
+        "stdint.h": "c",
+        "stm32f4xx_hal_spi.h": "c",
+        "stm32f4xx_hal_gpio.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}
