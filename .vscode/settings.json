@@ -10,7 +10,9 @@
         "stm32f4xx_hal_rcc_ex.h": "c",
         "stdint.h": "c",
         "stm32f4xx_hal_spi.h": "c",
-        "stm32f4xx_hal_gpio.h": "c"
+        "stm32f4xx_hal_gpio.h": "c",
+        "stm32f4xx_hal_dma.h": "c",
+        "config.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

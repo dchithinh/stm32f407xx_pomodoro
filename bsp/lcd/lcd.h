@@ -2,17 +2,8 @@
 #define __LCD_H__
 
 #include <stdint.h>
-
-/* This will use HAL API in lcd_write_command()and lcd_write_data() */
-#define USE_STM32_API 		1
-
-/* This will use HSI 16MHz sysclock and
- * LCD SPI clock can be configured by
- * SPI_BAUDRATEPRESCALER_2 in lcd_spi_init()
- * Otherwise, sysclock will be PLL 168MHz
- */
-#define USE_HSI_16MHZ 		1	
-
+#include <stdbool.h>
+#include "config.h"
 
 #define HIGH_16(x) (((uint16_t)x >> 0x8U) & 0xFFU)
 #define LOW_16(x)  (((uint16_t)x >> 0x0U) & 0xFFU)

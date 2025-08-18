@@ -1,2 +1,2 @@
 eclipse.preferences.version=1
-sfrviewstate={"fFavorites"\:{"fLists"\:{}},"fProperties"\:{"fNodeProperties"\:{}}}
+sfrviewstate={"fFavorites"\:{"fLists"\:{}},"fProperties"\:{"fNodeProperties"\:{"STM32F407/SPI2/DR"\:{"fNodeProperties"\:{"autoupdate"\:"true"}},"STM32F407/DMA1/S4CR"\:{"fNodeProperties"\:{"autoupdate"\:"true"}},"STM32F407/DMA1/HISR"\:{"fNodeProperties"\:{"autoupdate"\:"true"}},"STM32F407/DMA1/LISR"\:{"fNodeProperties"\:{"autoupdate"\:"true"}}}}}

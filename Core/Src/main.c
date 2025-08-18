@@ -45,24 +45,24 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-  lcd_init();
+   lcd_init();
 
 
 lcd_set_background_color(RED);
 
-lcd_set_background_color(GREEN);
+// lcd_set_background_color(GREEN);
 
-lcd_set_background_color(YELLOW);
+// lcd_set_background_color(YELLOW);
 
-lcd_set_background_color(ORANGE);
+// lcd_set_background_color(ORANGE);
 
-lcd_set_background_color(BLUE);
+// lcd_set_background_color(BLUE);
 
-lcd_set_background_color(INDIGO);
+// lcd_set_background_color(INDIGO);
 
-lcd_set_background_color(VIOLET);
+// lcd_set_background_color(VIOLET);
 
-ili9341_test_draw_color_bars();
+// ili9341_test_draw_color_bars();
 
 
   while (1)
@@ -72,7 +72,7 @@ ili9341_test_draw_color_bars();
 
 }
 
-#ifdef USE_HSI_16MHZ
+#if (USE_HSI_16MHZ == 1 )
 
 /**
   * @brief System Clock Configuration

@@ -7,6 +7,7 @@
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f4xx_hal_rcc_ex.h"
+#include "stm32f4xx_hal_dma.h"
 #include "lcd.h"
 #include "hw_def.h"
 #include "ili9341_reg.h"
@@ -33,8 +34,11 @@
 #define MADCTL_MH 0x04  ///< LCD refresh right to left
 
 SPI_HandleTypeDef lcd_spi_handle;
+DMA_HandleTypeDef lcd_dma_handle;
+
 lcd_handle_t lcd_handle;
 lcd_handle_t *hlcd = &lcd_handle;
+
 
 #define LCD_CS_LOW()    HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_RESET)
 #define LCD_CS_HIGH()   HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_SET)
@@ -51,6 +55,7 @@ uint8_t wb[DB_SIZE];
 
 static void lcd_pin_init(void);
 static void lcd_spi_init(void);
+static void lcd_dma_init(void);
 static void lcd_spi_enable(void);
 static void lcd_reset(void);
 static void lcd_write_command(uint8_t cmd);
@@ -59,7 +64,13 @@ static void lcd_config();
 static void lcd_buffer_init(lcd_handle_t *lcd);
 static void lcd_set_display_area(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2);
 static void lcd_set_orientation(uint8_t orientation);
+#ifndef USE_DMA_FLUSH_LCD
 static void lcd_write(uint8_t *buffer, uint32_t length);
+#else
+static void lcd_write_dma(uint8_t *buffer, uint32_t length);
+void lcd_dma_flush_complete(DMA_HandleTypeDef *hdma);
+
+#endif // #ifndef USE_DMA_FLUSH_LCD
 
 /* Utils functions*/
 static uint32_t copy_to_draw_buffer(lcd_handle_t *hlcd,uint32_t nbytes,uint32_t rgb888);
@@ -78,6 +89,10 @@ void lcd_init(void)
     lcd_pin_init();
     lcd_spi_init();
     lcd_spi_enable();
+#ifdef USE_DMA_FLUSH_LCD
+	lcd_dma_init();
+#endif
+
     lcd_reset();
     lcd_config();
 
@@ -183,6 +198,39 @@ static void lcd_spi_enable(void)
     __HAL_SPI_ENABLE(&lcd_spi_handle);
 }
 
+static void lcd_dma_init(void)
+{
+	__HAL_RCC_DMA1_CLK_ENABLE();
+
+	//Enable IRQ in NVIC side
+	HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+
+	// NVIC_SetPendingIRQ(DMA1_Stream4_IRQn);
+
+	/* SPI2 DMA Init */
+    /* SPI2_TX Init */
+    lcd_dma_handle.Instance = DMA1_Stream4;
+    lcd_dma_handle.Init.Channel = DMA_CHANNEL_0;
+    lcd_dma_handle.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    lcd_dma_handle.Init.PeriphInc = DMA_PINC_DISABLE;
+    lcd_dma_handle.Init.MemInc = DMA_MINC_ENABLE;
+    lcd_dma_handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    lcd_dma_handle.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    lcd_dma_handle.Init.Mode = DMA_NORMAL;
+    lcd_dma_handle.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+    lcd_dma_handle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    if (HAL_DMA_Init(&lcd_dma_handle) != HAL_OK)
+    {
+    //   Error_Handler();
+		printf("LCD DMA init failed\n");
+		while(1);
+    }
+
+    __HAL_LINKDMA(&lcd_spi_handle, hdmatx, lcd_dma_handle);
+
+}
+
 static void lcd_reset(void)
 {
     LCD_RESX_LOW();
@@ -196,7 +244,9 @@ static void lcd_reset(void)
 
 static void lcd_write_command(uint8_t cmd)
 {
+#ifndef USE_STM32_API
 	SPI_TypeDef *pSPI = LCD_SPI;
+#endif
     LCD_CS_LOW();
     LCD_DCX_LOW(); // Command mode
 	
@@ -218,7 +268,10 @@ static void lcd_write_command(uint8_t cmd)
 
 static void lcd_write_data(uint8_t *buffer, uint32_t length)
 {
+#ifndef USE_STM32_API
 	SPI_TypeDef *pSPI = LCD_SPI;
+#endif
+
     LCD_DCX_HIGH(); // Data mode
 	LCD_CS_LOW();
 	
@@ -472,7 +525,13 @@ static void lcd_flush(lcd_handle_t *hlcd)
 	lcd_set_display_area(x1, x2, y1, y2);
 	lcd_send_cmd_mem_write();
 
+#ifndef USE_DMA_FLUSH_LCD
 	lcd_write(hlcd->buff_to_flush, hlcd->write_length);
+#else
+	lcd_write_dma(hlcd->buff_to_flush, hlcd->write_length);
+#endif
+	
+
 	hlcd->buff_to_flush = NULL;
 }
 
@@ -570,6 +629,7 @@ static uint32_t copy_to_draw_buffer(lcd_handle_t *hlcd,uint32_t nbytes,uint32_t 
 	return 0;
 }
 
+#ifndef USE_DMA_FLUSH_LCD
 static void lcd_write(uint8_t *buffer, uint32_t length)
 {
 	// Modify SPI data size to 16 bits
@@ -598,6 +658,41 @@ static void lcd_write(uint8_t *buffer, uint32_t length)
 	SET_SPI_8BIT_MODE(&lcd_spi_handle);
 	__HAL_SPI_ENABLE(&lcd_spi_handle);
 }
+#else
+
+static void lcd_write_dma(uint8_t *buffer, uint32_t length)
+{
+	// Modify SPI data size to 16 bits
+	__HAL_SPI_DISABLE(&lcd_spi_handle);
+	SET_SPI_16BIT_MODE(&lcd_spi_handle);
+	__HAL_SPI_ENABLE(&lcd_spi_handle);    
+
+	uint16_t *data_ptr = (uint16_t *)buffer;
+	LCD_CS_LOW();
+
+#ifdef USE_DMA_IN_POLLING_MODE //This mode is for learning purpose only
+	/* This will enable SPI request to DMA to start put data in SPI2->DR,
+	 * When SPI TX buffer is empty.
+	 */
+    SET_BIT(lcd_spi_handle.Instance->CR2, SPI_CR2_TXDMAEN);
+	HAL_DMA_Start(&lcd_dma_handle, (uint32_t)data_ptr, (uint32_t)&LCD_SPI->DR, length/2);
+	HAL_DMA_PollForTransfer(&lcd_dma_handle, HAL_DMA_FULL_TRANSFER, HAL_MAX_DELAY);
+
+	// Restore back to 8-bit mode
+	__HAL_SPI_DISABLE(&lcd_spi_handle);
+	SET_SPI_8BIT_MODE(&lcd_spi_handle);
+	__HAL_SPI_ENABLE(&lcd_spi_handle);
+#elif USE_DMA_IN_IT_MODE
+	
+#else
+// Make sure previous flags are cleared before starting DMA
+
+
+	HAL_SPI_Transmit_DMA(&lcd_spi_handle, (uint8_t *)buffer, length/2);
+#endif
+	
+}
+#endif //#ifndef USE_DMA_FLUSH_LCD
 
 void ili9341_test_draw_color_bars(void)
 {
@@ -646,3 +741,28 @@ void ili9341_test_draw_color_bars(void)
     LCD_CS_HIGH();
 }
 
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	__HAL_DMA_CLEAR_FLAG(&lcd_dma_handle, __HAL_DMA_GET_TC_FLAG_INDEX(&lcd_dma_handle));
+	__HAL_DMA_CLEAR_FLAG(&lcd_dma_handle, __HAL_DMA_GET_TC_FLAG_INDEX(&lcd_dma_handle));
+	__HAL_DMA_CLEAR_FLAG(&lcd_dma_handle, __HAL_DMA_GET_TC_FLAG_INDEX(&lcd_dma_handle));
+
+	LCD_CS_HIGH();
+
+	__HAL_SPI_DISABLE(hspi);
+	SET_SPI_8BIT_MODE(hspi);
+	__HAL_SPI_ENABLE(hspi);
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+	// Handle SPI error here
+	printf("SPI Error occurred\n");
+	while(1);
+}
+
+void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	// Handle half transfer complete here if needed
+	// This is optional and can be used for debugging or other purposes
+}

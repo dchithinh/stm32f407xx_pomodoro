@@ -6,6 +6,11 @@ It's built for **learning purposes**, focusing on how SPI communication works an
 
 ---
 
+## Acknowledgments
+This project was inspired by [niekiran/EmbeddedGraphicsLVGL-MCU3] (https://github.com/niekiran/EmbeddedGraphicsLVGL-MCU3/tree/main).
+
+---
+
 ## 🖼️ LCD Specs
 
 - **Size**: 2.4 inches
@@ -45,7 +50,7 @@ Throughout this project, I encountered several interesting challenges and gained
 
 ---
 
-#### 🐛 HAL SPI Issues at Low Clock Speeds
+#### HAL SPI Issues at Low Clock Speeds
 
 Initially, I used the internal **HSI (16 MHz)** with SPI configured at **1–2 MHz**. Although the logic analyzer showed that all SPI commands were sent correctly using the STM32 HAL API, the LCD did not initialize or display properly.
 
@@ -55,7 +60,7 @@ Then I realized that the **low SPI speed** might be the root cause of the issue.
 
 ---
 
-#### ❓ Unable to Read Data from LCD (e.g., ID, Status)
+#### Unable to Read Data from LCD (e.g., ID, Status)
 
 I attempted to read data from the LCD (e.g., display **ID** and **status registers**), but failed to get valid responses.  
 I'm still unsure whether this is due to:
@@ -67,7 +72,7 @@ Further investigation is required.
 
 ---
 
-#### 🔧 16-bit Write with HAL API Unclear
+#### 16-bit Write with HAL API Unclear
 
 In the `lcd_write()` function, I needed to send **16-bit data** to the LCD.
 
@@ -76,15 +81,6 @@ However, I couldn't get `HAL_SPI_Transmit()` to work properly with **16-bit tran
 This part still needs improvement, or at least a clearer understanding of how to configure **HAL SPI** to transmit 16-bit values using an 8-bit buffer.
 
 ---
-
-#### ✅ Flexible API Switching
-
-These challenges led me to introduce the `USE_STM32_API` ann `USE_HSI_16MHZ` macro, which allows easy switching between:
-
-- **STM32 HAL API**  
-- **Bare-metal register access**
-- **HSI 16Mz or using pll 168MHz**
-
 
 ### Using functions `ili9341_test_draw_color_bars()`
 ![alt text](Doc/RGB.png)
