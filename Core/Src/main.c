@@ -17,7 +17,13 @@
   */
 
 #include "main.h"
-#include "lcd.h"
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_uart.h"
+#include "lvgl.h"
+#include "lv_conf.h"
+#include "lv_examples.h"
+#include "tft.h"
+
 
 #define RGB888(r,g,b)  (((r) << 16) | ((g) << 8) | (b))
 
@@ -31,7 +37,91 @@
 #define WHITE   	RGB888(255,255,255)
 #define BLACK		  RGB888(0,0,0)
 
+UART_HandleTypeDef huart2;
+
 void SystemClock_Config(void);
+
+
+static void UART2_Init(void)
+{
+    huart2.Instance = USART2;
+    huart2.Init.BaudRate = 115200;
+    huart2.Init.WordLength = UART_WORDLENGTH_8B;
+    huart2.Init.StopBits = UART_STOPBITS_1;
+    huart2.Init.Parity = UART_PARITY_NONE;
+    huart2.Init.Mode = UART_MODE_TX_RX;
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    if (HAL_UART_Init(&huart2) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+#define LOG_BUFFER_SIZE 1024   // adjust for your needs
+
+static volatile uint16_t log_head = 0;
+static volatile uint16_t log_tail = 0;
+static uint8_t log_buf[LOG_BUFFER_SIZE];
+static volatile uint8_t uart_tx_busy = 0;
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) {
+        if (log_tail != log_head) {
+            uint8_t c = log_buf[log_tail];
+            log_tail = (log_tail + 1) % LOG_BUFFER_SIZE;
+            HAL_UART_Transmit_IT(&huart2, &c, 1);
+        } else {
+            uart_tx_busy = 0; // transmission done
+        }
+    }
+}
+
+void usart2_puts_it(const char *s)
+{
+    while (*s) {
+        uint16_t next = (log_head + 1) % LOG_BUFFER_SIZE;
+
+        if (next == log_tail) {
+            // Buffer full -> drop character OR spin-wait
+            // For logs, usually dropping is safer (avoid blocking LVGL)
+            return;
+        }
+
+        log_buf[log_head] = (uint8_t)*s++;
+        log_head = next;
+    }
+
+    if (!uart_tx_busy) {
+        uart_tx_busy = 1;
+        uint8_t c = log_buf[log_tail];
+        log_tail = (log_tail + 1) % LOG_BUFFER_SIZE;
+        HAL_UART_Transmit_IT(&huart2, &c, 1);
+    }
+}
+
+
+static void my_log_cb(const char *buf)
+{
+    // usart2_puts_it(buf);
+    // usart2_puts_it("\r\r\n");  
+    if (buf) {
+        // Blocking transmit to avoid overlap
+        HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+    }
+}
+
+
+void lv_port_log_init(void)
+{
+    lv_log_register_print_cb(my_log_cb);
+}
+
+void test_uart_log(void)
+{
+    my_log_cb("Hello from my_log_cb!");
+}
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -45,34 +135,29 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-   lcd_init();
+  UART2_Init();
+  // test_uart_log();
+  lv_init();
+  lv_port_log_init();
+  tft_init();
+  lv_disp_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
 
+    // lv_example_label_1();
+//   lv_example_dropdown_1();
+//  lv_example_slider_1();
+lv_example_anim_2();
 
-lcd_set_background_color(RED);
-
-// lcd_set_background_color(GREEN);
-
-// lcd_set_background_color(YELLOW);
-
-// lcd_set_background_color(ORANGE);
-
-// lcd_set_background_color(BLUE);
-
-// lcd_set_background_color(INDIGO);
-
-// lcd_set_background_color(VIOLET);
-
-// ili9341_test_draw_color_bars();
-
-
+  // lv_example_style_3();
+  
   while (1)
   {
-    //TODO: Add main loop here
+    HAL_Delay(5);
+	  lv_timer_handler();
   }
 
 }
 
-#if (USE_HSI_16MHZ == 1 )
+#if (USE_HSI_16MHZ == 1)
 
 /**
   * @brief System Clock Configuration

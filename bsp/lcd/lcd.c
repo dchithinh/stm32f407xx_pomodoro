@@ -55,22 +55,20 @@ uint8_t wb[DB_SIZE];
 
 static void lcd_pin_init(void);
 static void lcd_spi_init(void);
-static void lcd_dma_init(void);
+
 static void lcd_spi_enable(void);
 static void lcd_reset(void);
 static void lcd_write_command(uint8_t cmd);
 static void lcd_write_data(uint8_t *buffer, uint32_t length);
 static void lcd_config();
 static void lcd_buffer_init(lcd_handle_t *lcd);
-static void lcd_set_display_area(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2);
 static void lcd_set_orientation(uint8_t orientation);
-#ifndef USE_DMA_FLUSH_LCD
-static void lcd_write(uint8_t *buffer, uint32_t length);
-#else
+#if USE_DMA_FLUSH_LCD
+static void lcd_dma_init(void);
 static void lcd_write_dma(uint8_t *buffer, uint32_t length);
-void lcd_dma_flush_complete(DMA_HandleTypeDef *hdma);
-
-#endif // #ifndef USE_DMA_FLUSH_LCD
+#else
+void lcd_write(uint8_t *buffer, uint32_t length);
+#endif
 
 /* Utils functions*/
 static uint32_t copy_to_draw_buffer(lcd_handle_t *hlcd,uint32_t nbytes,uint32_t rgb888);
@@ -81,7 +79,6 @@ static void make_area(lcd_area_t *area,uint32_t x_start, uint32_t x_width,uint32
 static uint32_t get_total_bytes(lcd_handle_t *hlcd,uint32_t w , uint32_t h);
 static uint16_t convert_rgb888_to_rgb565(uint32_t rgb888);
 static void lcd_flush(lcd_handle_t *hlcd);
-static void lcd_send_cmd_mem_write(void);
 static uint8_t is_lcd_write_allowed(lcd_handle_t *hlcd);
 
 void lcd_init(void)
@@ -89,16 +86,13 @@ void lcd_init(void)
     lcd_pin_init();
     lcd_spi_init();
     lcd_spi_enable();
-#ifdef USE_DMA_FLUSH_LCD
+#if USE_DMA_FLUSH_LCD
 	lcd_dma_init();
 #endif
 
     lcd_reset();
     lcd_config();
 
-	lcd_set_orientation(PORTRAIT);
-
-#if 1
     hlcd->display_area.x1 = 0;
 	hlcd->display_area.x2 = LCD_ACTIVE_WIDTH - 1;
 	hlcd->display_area.y1 = 0;
@@ -110,10 +104,10 @@ void lcd_init(void)
 	uint16_t x2 = hlcd->display_area.x2;
 	uint16_t y1 = hlcd->display_area.y1;
 	uint16_t y2 = hlcd->display_area.y2;
-	lcd_set_display_area(x1, x2, y1, y2);
 	lcd_set_orientation(hlcd->orientation);
+	lcd_set_display_area(x1, x2, y1, y2);
+	
 	lcd_buffer_init(hlcd);
-#endif
 }
 
 void lcd_pin_init(void)
@@ -198,6 +192,7 @@ static void lcd_spi_enable(void)
     __HAL_SPI_ENABLE(&lcd_spi_handle);
 }
 
+#if USE_DMA_FLUSH_LCD
 static void lcd_dma_init(void)
 {
 	__HAL_RCC_DMA1_CLK_ENABLE();
@@ -230,6 +225,7 @@ static void lcd_dma_init(void)
     __HAL_LINKDMA(&lcd_spi_handle, hdmatx, lcd_dma_handle);
 
 }
+#endif // USE_DMA_FLUSH_LCD
 
 static void lcd_reset(void)
 {
@@ -472,7 +468,7 @@ void lcd_set_orientation(uint8_t orientation)
 	lcd_write_data(&param, 1);
 }
 
-static void lcd_set_display_area(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2)
+void lcd_set_display_area(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2)
 {
 	uint8_t params[4];
 	//Set the column address
@@ -511,7 +507,7 @@ static uint8_t is_lcd_write_allowed(lcd_handle_t *hlcd)
 	return FALSE;
 }
 
-static void lcd_send_cmd_mem_write(void)
+void lcd_send_cmd_mem_write(void)
 {
 	lcd_write_command(ILI9341_GRAM);
 }
@@ -525,13 +521,11 @@ static void lcd_flush(lcd_handle_t *hlcd)
 	lcd_set_display_area(x1, x2, y1, y2);
 	lcd_send_cmd_mem_write();
 
-#ifndef USE_DMA_FLUSH_LCD
-	lcd_write(hlcd->buff_to_flush, hlcd->write_length);
-#else
+#if USE_DMA_FLUSH_LCD
 	lcd_write_dma(hlcd->buff_to_flush, hlcd->write_length);
+#else
+	lcd_write(hlcd->buff_to_flush, hlcd->write_length);
 #endif
-	
-
 	hlcd->buff_to_flush = NULL;
 }
 
@@ -629,37 +623,7 @@ static uint32_t copy_to_draw_buffer(lcd_handle_t *hlcd,uint32_t nbytes,uint32_t 
 	return 0;
 }
 
-#ifndef USE_DMA_FLUSH_LCD
-static void lcd_write(uint8_t *buffer, uint32_t length)
-{
-	// Modify SPI data size to 16 bits
-	__HAL_SPI_DISABLE(&lcd_spi_handle);
-	SET_SPI_16BIT_MODE(&lcd_spi_handle);
-	__HAL_SPI_ENABLE(&lcd_spi_handle);
-
-    // Transmit 16-bit data
-    LCD_CS_LOW();
-	uint16_t *data_ptr = (uint16_t *)buffer;
-
-	while (length) {
-		// Wait until TX buffer is empty
-		while (!(lcd_spi_handle.Instance->SR & SPI_SR_TXE));
-		// Send 16-bit data
-		lcd_spi_handle.Instance->DR = *data_ptr++;
-		length -= sizeof(uint16_t);
-		// Wait until transmission is complete
-		while (lcd_spi_handle.Instance->SR & SPI_SR_BSY);
-	}
-	
-    LCD_CS_HIGH();
-	
-	// Restore back to 8-bit mode
-	__HAL_SPI_DISABLE(&lcd_spi_handle);
-	SET_SPI_8BIT_MODE(&lcd_spi_handle);
-	__HAL_SPI_ENABLE(&lcd_spi_handle);
-}
-#else
-
+#if USE_DMA_FLUSH_LCD
 static void lcd_write_dma(uint8_t *buffer, uint32_t length)
 {
 	// Modify SPI data size to 16 bits
@@ -690,9 +654,43 @@ static void lcd_write_dma(uint8_t *buffer, uint32_t length)
 
 	HAL_SPI_Transmit_DMA(&lcd_spi_handle, (uint8_t *)buffer, length/2);
 #endif
-	
 }
-#endif //#ifndef USE_DMA_FLUSH_LCD
+
+#else
+void lcd_write(uint8_t *buffer, uint32_t length)
+{
+    // Switch SPI to 16-bit mode
+    __HAL_SPI_DISABLE(&lcd_spi_handle);
+    SET_SPI_16BIT_MODE(&lcd_spi_handle);
+    __HAL_SPI_ENABLE(&lcd_spi_handle);
+
+    LCD_CS_LOW();
+
+    uint16_t *data_ptr = (uint16_t *)buffer;
+    uint32_t count = length / 2;   // number of 16-bit words
+
+    for(uint32_t i = 0; i < count; i++) {
+        // Wait until TX buffer empty
+        while(!(lcd_spi_handle.Instance->SR & SPI_SR_TXE));
+
+        // Write next 16-bit pixel
+        lcd_spi_handle.Instance->DR = *data_ptr++;
+    }
+
+    // Wait for last transmission to fully complete
+    while(!(lcd_spi_handle.Instance->SR & SPI_SR_TXE));
+    while(lcd_spi_handle.Instance->SR & SPI_SR_BSY);
+
+    LCD_CS_HIGH();
+
+    // Restore back to 8-bit mode
+    __HAL_SPI_DISABLE(&lcd_spi_handle);
+    SET_SPI_8BIT_MODE(&lcd_spi_handle);
+    __HAL_SPI_ENABLE(&lcd_spi_handle);
+}
+
+
+#endif // USE_DMA_FLUSH_LCD
 
 void ili9341_test_draw_color_bars(void)
 {
@@ -765,4 +763,13 @@ void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	// Handle half transfer complete here if needed
 	// This is optional and can be used for debugging or other purposes
+}
+
+void *lcd_get_draw_buffer1_addr(void)
+{
+    return (void*)hlcd->draw_buffer1;
+}
+void *lcd_get_draw_buffer2_addr(void)
+{
+	return (void*)hlcd->draw_buffer2;
 }

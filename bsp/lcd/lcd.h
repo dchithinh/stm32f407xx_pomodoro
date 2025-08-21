@@ -45,4 +45,10 @@ void lcd_set_background_color(uint32_t rgb888);
 void lcd_fill_rect(uint32_t rgb888, uint32_t x_start, uint32_t x_width, uint32_t y_start,uint32_t y_height);
 void ili9341_test_draw_color_bars(void);
 
+void lcd_set_display_area(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2);
+void lcd_send_cmd_mem_write(void);
+void lcd_write(uint8_t *buffer, uint32_t length);
+void *lcd_get_draw_buffer1_addr(void);
+void *lcd_get_draw_buffer2_addr(void);
+
 #endif /* __LCD_H__ */
