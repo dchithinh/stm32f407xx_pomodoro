@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-
+#include <string.h>
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_uart.h"
@@ -23,6 +23,7 @@
 #include "lv_conf.h"
 #include "lv_examples.h"
 #include "tft.h"
+#include "touchpad.h"
 
 
 #define RGB888(r,g,b)  (((r) << 16) | ((g) << 8) | (b))
@@ -101,7 +102,7 @@ void usart2_puts_it(const char *s)
 }
 
 
-static void my_log_cb(const char *buf)
+void my_log_cb(lv_log_level_t level, const char * buf)
 {
     // usart2_puts_it(buf);
     // usart2_puts_it("\r\r\n");  
@@ -113,14 +114,39 @@ static void my_log_cb(const char *buf)
 
 
 void lv_port_log_init(void)
-{
-    lv_log_register_print_cb(my_log_cb);
+{ 
+  lv_log_register_print_cb(my_log_cb); 
 }
 
 void test_uart_log(void)
 {
-    my_log_cb("Hello from my_log_cb!");
+    my_log_cb(LV_LOG_LEVEL_INFO, "Hello from my_log_cb!");
 }
+
+static void touch_cursor_cb(lv_timer_t * t)
+{
+    LV_UNUSED(t);
+
+    lv_indev_t * indev = lv_indev_get_next(NULL);
+    if(indev) {
+        lv_point_t p;
+        lv_indev_get_point(indev, &p);
+
+        lv_obj_t * cursor = (lv_obj_t *)lv_timer_get_user_data(t);
+        lv_obj_set_pos(cursor, p.x, p.y);
+    }
+}
+
+void create_touch_cursor(void)
+{
+    lv_obj_t * cursor = lv_label_create(lv_scr_act());
+    lv_label_set_text(cursor, "+");
+
+    // Attach cursor as user data
+    lv_timer_create(touch_cursor_cb, 30, cursor);
+}
+
+
 
 /**
   * @brief  The application entry point.
@@ -136,23 +162,25 @@ int main(void)
   SystemClock_Config();
 
   UART2_Init();
-  // test_uart_log();
+  test_uart_log();
   lv_init();
   lv_port_log_init();
   tft_init();
-  lv_disp_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
+  touchpad_init();
 
-    // lv_example_label_1();
-//   lv_example_dropdown_1();
-//  lv_example_slider_1();
-lv_example_anim_2();
-
+// lv_example_anim_2();
+// lv_example_grad_1();
   // lv_example_style_3();
+  // lv_example_button_1();
+  // lv_example_event_click();
+
+create_touch_cursor();
+
   
   while (1)
   {
-    HAL_Delay(5);
 	  lv_timer_handler();
+    HAL_Delay(5);
   }
 
 }

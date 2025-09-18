@@ -22,7 +22,6 @@ extern "C" {
 #error "lv_slider: lv_bar is required. Enable it in lv_conf.h (LV_USE_BAR 1)"
 #endif
 
-
 /*********************
  *      DEFINES
  *********************/
@@ -30,34 +29,33 @@ extern "C" {
 /**********************
  *      TYPEDEFS
  **********************/
-
-enum {
+typedef enum {
     LV_SLIDER_MODE_NORMAL = LV_BAR_MODE_NORMAL,
     LV_SLIDER_MODE_SYMMETRICAL = LV_BAR_MODE_SYMMETRICAL,
     LV_SLIDER_MODE_RANGE = LV_BAR_MODE_RANGE
-};
-typedef uint8_t lv_slider_mode_t;
+} lv_slider_mode_t;
 
-typedef struct {
-    lv_bar_t bar;       /*Add the ancestor's type first*/
-    lv_area_t left_knob_area;
-    lv_area_t right_knob_area;
-    int32_t * value_to_set; /*Which bar value to set*/
-    uint8_t dragging : 1;       /*1: the slider is being dragged*/
-    uint8_t left_knob_focus : 1; /*1: with encoder now the right knob can be adjusted*/
-} lv_slider_t;
-
-extern const lv_obj_class_t lv_slider_class;
-
-/**
- * `type` field in `lv_obj_draw_part_dsc_t` if `class_p = lv_slider_class`
- * Used in `LV_EVENT_DRAW_PART_BEGIN` and `LV_EVENT_DRAW_PART_END`
- */
 typedef enum {
-    LV_SLIDER_DRAW_PART_KNOB,           /**< The main (right) knob's rectangle*/
-    LV_SLIDER_DRAW_PART_KNOB_LEFT,      /**< The left knob's rectangle*/
-} lv_slider_draw_part_type_t;
+    LV_SLIDER_ORIENTATION_AUTO = LV_BAR_ORIENTATION_AUTO,
+    LV_SLIDER_ORIENTATION_HORIZONTAL = LV_BAR_ORIENTATION_HORIZONTAL,
+    LV_SLIDER_ORIENTATION_VERTICAL = LV_BAR_ORIENTATION_VERTICAL
+} lv_slider_orientation_t;
 
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_slider_class;
+
+#if LV_USE_OBJ_PROPERTY
+enum _lv_property_slider_id_t {
+    LV_PROPERTY_ID2(SLIDER, VALUE,          LV_PROPERTY_TYPE_INT,   LV_PROPERTY_TYPE_BOOL,  0),
+    LV_PROPERTY_ID2(SLIDER, LEFT_VALUE,     LV_PROPERTY_TYPE_INT,   LV_PROPERTY_TYPE_BOOL,  1),
+    LV_PROPERTY_ID2(SLIDER, RANGE,          LV_PROPERTY_TYPE_INT,   LV_PROPERTY_TYPE_INT,   2),
+    LV_PROPERTY_ID(SLIDER, MIN_VALUE,       LV_PROPERTY_TYPE_INT,       4),
+    LV_PROPERTY_ID(SLIDER, MAX_VALUE,       LV_PROPERTY_TYPE_INT,       5),
+    LV_PROPERTY_ID(SLIDER, MODE,            LV_PROPERTY_TYPE_INT,       6),
+    LV_PROPERTY_ID(SLIDER, IS_DRAGGED,      LV_PROPERTY_TYPE_BOOL,      7),
+    LV_PROPERTY_ID(SLIDER, IS_SYMMETRICAL,  LV_PROPERTY_TYPE_BOOL,      8),
+    LV_PROPERTY_SLIDER_END,
+};
+#endif
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
@@ -79,10 +77,7 @@ lv_obj_t * lv_slider_create(lv_obj_t * parent);
  * @param value     the new value
  * @param anim      LV_ANIM_ON: set the value with an animation; LV_ANIM_OFF: change the value immediately
  */
-static inline void lv_slider_set_value(lv_obj_t * obj, int32_t value, lv_anim_enable_t anim)
-{
-    lv_bar_set_value(obj, value, anim);
-}
+void lv_slider_set_value(lv_obj_t * obj, int32_t value, lv_anim_enable_t anim);
 
 /**
  * Set a new value for the left knob of a slider
@@ -90,31 +85,43 @@ static inline void lv_slider_set_value(lv_obj_t * obj, int32_t value, lv_anim_en
  * @param value     new value
  * @param anim      LV_ANIM_ON: set the value with an animation; LV_ANIM_OFF: change the value immediately
  */
-static inline void lv_slider_set_left_value(lv_obj_t * obj, int32_t value, lv_anim_enable_t anim)
-{
-    lv_bar_set_start_value(obj, value, anim);
-}
+void lv_slider_set_start_value(lv_obj_t * obj, int32_t value, lv_anim_enable_t anim);
 
 /**
- * Set minimum and the maximum values of a bar
+ * Set the minimum and the maximum values of a bar
  * @param obj       pointer to the slider object
  * @param min       minimum value
  * @param max       maximum value
  */
-static inline void lv_slider_set_range(lv_obj_t * obj, int32_t min, int32_t max)
-{
-    lv_bar_set_range(obj, min, max);
-}
+void lv_slider_set_range(lv_obj_t * obj, int32_t min, int32_t max);
+
+/**
+ * Set the minimum values of a bar
+ * @param obj       pointer to the slider object
+ * @param min       minimum value
+ */
+void lv_slider_set_min_value(lv_obj_t * obj, int32_t min);
+
+/**
+ * Set the maximum values of a bar
+ * @param obj       pointer to the slider object
+ * @param max       maximum value
+ */
+void lv_slider_set_max_value(lv_obj_t * obj, int32_t max);
 
 /**
  * Set the mode of slider.
  * @param obj       pointer to a slider object
- * @param mode      the mode of the slider. See ::lv_slider_mode_t
+ * @param mode      the mode of the slider. See `lv_slider_mode_t`
  */
-static inline void lv_slider_set_mode(lv_obj_t * obj, lv_slider_mode_t mode)
-{
-    lv_bar_set_mode(obj, (lv_bar_mode_t)mode);
-}
+void lv_slider_set_mode(lv_obj_t * obj, lv_slider_mode_t mode);
+
+/**
+ * Set the orientation of slider.
+ * @param obj           pointer to a slider object
+ * @param orientation   slider  orientation from `lv_slider_orientation_t`
+ */
+void lv_slider_set_orientation(lv_obj_t * obj, lv_slider_orientation_t orientation);
 
 /*=====================
  * Getter functions
@@ -125,40 +132,28 @@ static inline void lv_slider_set_mode(lv_obj_t * obj, lv_slider_mode_t mode)
  * @param obj       pointer to a slider object
  * @return          the value of the main knob of the slider
  */
-static inline int32_t lv_slider_get_value(const lv_obj_t * obj)
-{
-    return lv_bar_get_value(obj);
-}
+int32_t lv_slider_get_value(const lv_obj_t * obj);
 
 /**
  * Get the value of the left knob of a slider
  * @param obj       pointer to a slider object
  * @return          the value of the left knob of the slider
  */
-static inline int32_t lv_slider_get_left_value(const lv_obj_t * obj)
-{
-    return lv_bar_get_start_value(obj);
-}
+int32_t lv_slider_get_left_value(const lv_obj_t * obj);
 
 /**
  * Get the minimum value of a slider
  * @param obj       pointer to a slider object
  * @return          the minimum value of the slider
  */
-static inline int32_t lv_slider_get_min_value(const lv_obj_t * obj)
-{
-    return lv_bar_get_min_value(obj);
-}
+int32_t lv_slider_get_min_value(const lv_obj_t * obj);
 
 /**
  * Get the maximum value of a slider
  * @param obj       pointer to a slider object
  * @return          the maximum value of the slider
  */
-static inline int32_t lv_slider_get_max_value(const lv_obj_t * obj)
-{
-    return lv_bar_get_max_value(obj);
-}
+int32_t lv_slider_get_max_value(const lv_obj_t * obj);
 
 /**
  * Give the slider is being dragged or not
@@ -169,16 +164,35 @@ bool lv_slider_is_dragged(const lv_obj_t * obj);
 
 /**
  * Get the mode of the slider.
- * @param obj       pointer to a bar object
- * @return          see ::lv_slider_mode_t
+ * @param slider       pointer to a slider object
+ * @return          see `lv_slider_mode_t`
  */
-static inline lv_slider_mode_t lv_slider_get_mode(lv_obj_t * slider)
-{
-    lv_bar_mode_t mode = lv_bar_get_mode(slider);
-    if(mode == LV_BAR_MODE_SYMMETRICAL) return LV_SLIDER_MODE_SYMMETRICAL;
-    else if(mode == LV_BAR_MODE_RANGE) return LV_SLIDER_MODE_RANGE;
-    else return LV_SLIDER_MODE_NORMAL;
-}
+lv_slider_mode_t lv_slider_get_mode(lv_obj_t * slider);
+
+/**
+ * Get the orientation of slider.
+ * @param obj       pointer to a slider object
+ * @return          slider orientation from `lv_slider_orientation_t`
+ */
+lv_slider_orientation_t lv_slider_get_orientation(lv_obj_t * slider);
+
+/**
+ * Give the slider is in symmetrical mode or not
+ * @param obj       pointer to slider object
+ * @return          true: in symmetrical mode false : not in
+*/
+bool lv_slider_is_symmetrical(lv_obj_t * obj);
+
+
+#if LV_USE_OBSERVER
+/**
+ * Bind an integer or float Subject to a Slider's value.
+ * @param obj       pointer to Slider
+ * @param subject   pointer to Subject
+ * @return          pointer to newly-created Observer
+ */
+lv_observer_t * lv_slider_bind_value(lv_obj_t * obj, lv_subject_t * subject);
+#endif
 
 /**********************
  *      MACROS

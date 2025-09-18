@@ -20,6 +20,7 @@ extern "C" {
 #include "../../core/lv_obj.h"
 #include "../../misc/lv_anim.h"
 #include "../label/lv_label.h"
+#include "../../others/observer/lv_observer.h"
 
 /*********************
  *      DEFINES
@@ -28,42 +29,19 @@ extern "C" {
 /**********************
  *      TYPEDEFS
  **********************/
-
-enum {
+typedef enum {
     LV_BAR_MODE_NORMAL,
     LV_BAR_MODE_SYMMETRICAL,
     LV_BAR_MODE_RANGE
-};
-typedef uint8_t lv_bar_mode_t;
+} lv_bar_mode_t;
 
-typedef struct {
-    lv_obj_t * bar;
-    int32_t anim_start;
-    int32_t anim_end;
-    int32_t anim_state;
-} _lv_bar_anim_t;
-
-typedef struct {
-    lv_obj_t obj;
-    int32_t cur_value;          /**< Current value of the bar*/
-    int32_t min_value;          /**< Minimum value of the bar*/
-    int32_t max_value;          /**< Maximum value of the bar*/
-    int32_t start_value;        /**< Start value of the bar*/
-    lv_area_t indic_area;       /**< Save the indicator area. Might be used by derived types*/
-    _lv_bar_anim_t cur_value_anim;
-    _lv_bar_anim_t start_value_anim;
-    lv_bar_mode_t mode : 2;     /**< Type of bar*/
-} lv_bar_t;
-
-extern const lv_obj_class_t lv_bar_class;
-
-/**
- * `type` field in `lv_obj_draw_part_dsc_t` if `class_p = lv_bar_class`
- * Used in `LV_EVENT_DRAW_PART_BEGIN` and `LV_EVENT_DRAW_PART_END`
- */
 typedef enum {
-    LV_BAR_DRAW_PART_INDICATOR,    /**< The indicator*/
-} lv_bar_draw_part_type_t;
+    LV_BAR_ORIENTATION_AUTO,
+    LV_BAR_ORIENTATION_HORIZONTAL,
+    LV_BAR_ORIENTATION_VERTICAL
+} lv_bar_orientation_t;
+
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_bar_class;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -71,8 +49,8 @@ typedef enum {
 
 /**
  * Create a bar object
- * @param parent    pointer to an object, it will be the parent of the new bar
- * @return          pointer to the created bar
+ * @param parent        pointer to an object, it will be the parent of the new bar
+ * @return              pointer to the created bar
  */
 lv_obj_t * lv_bar_create(lv_obj_t * parent);
 
@@ -82,17 +60,17 @@ lv_obj_t * lv_bar_create(lv_obj_t * parent);
 
 /**
  * Set a new value on the bar
- * @param bar       pointer to a bar object
- * @param value     new value
- * @param anim      LV_ANIM_ON: set the value with an animation; LV_ANIM_OFF: change the value immediately
+ * @param obj           pointer to a bar object
+ * @param value         new value
+ * @param anim          LV_ANIM_ON: set the value with an animation; LV_ANIM_OFF: change the value immediately
  */
 void lv_bar_set_value(lv_obj_t * obj, int32_t value, lv_anim_enable_t anim);
 
 /**
  * Set a new start value on the bar
- * @param obj       pointer to a bar object
- * @param value     new start value
- * @param anim      LV_ANIM_ON: set the value with an animation; LV_ANIM_OFF: change the value immediately
+ * @param obj             pointer to a bar object
+ * @param start_value     new start value
+ * @param anim            LV_ANIM_ON: set the value with an animation; LV_ANIM_OFF: change the value immediately
  */
 void lv_bar_set_start_value(lv_obj_t * obj, int32_t start_value, lv_anim_enable_t anim);
 
@@ -101,15 +79,37 @@ void lv_bar_set_start_value(lv_obj_t * obj, int32_t start_value, lv_anim_enable_
  * @param obj       pointer to the bar object
  * @param min       minimum value
  * @param max       maximum value
+ * @note If min is greater than max, the drawing direction becomes to the opposite direction.
  */
 void lv_bar_set_range(lv_obj_t * obj, int32_t min, int32_t max);
 
 /**
+ * Set minimum value of a bar
+ * @param obj       pointer to the bar object
+ * @param min       minimum value
+ */
+void lv_bar_set_min_value(lv_obj_t * obj, int32_t min);
+
+/**
+ * Set maximum value of a bar
+ * @param obj       pointer to the bar object
+ * @param max       maximum value
+ */
+void lv_bar_set_max_value(lv_obj_t * obj, int32_t max);
+
+/**
  * Set the type of bar.
  * @param obj       pointer to bar object
- * @param mode      bar type from ::lv_bar_mode_t
+ * @param mode      bar type from `lv_bar_mode_t`
  */
 void lv_bar_set_mode(lv_obj_t * obj, lv_bar_mode_t mode);
+
+/**
+ * Set the orientation of bar.
+ * @param obj           pointer to bar object
+ * @param orientation   bar orientation from `lv_bar_orientation_t`
+ */
+void lv_bar_set_orientation(lv_obj_t * obj, lv_bar_orientation_t orientation);
 
 /*=====================
  * Getter functions
@@ -146,9 +146,33 @@ int32_t lv_bar_get_max_value(const lv_obj_t * obj);
 /**
  * Get the type of bar.
  * @param obj       pointer to bar object
- * @return          bar type from ::lv_bar_mode_t
+ * @return          bar type from `lv_bar_mode_t`
  */
 lv_bar_mode_t lv_bar_get_mode(lv_obj_t * obj);
+
+/**
+ * Get the orientation of bar.
+ * @param obj       pointer to bar object
+ * @return          bar orientation from `lv_bar_orientation_t`
+ */
+lv_bar_orientation_t lv_bar_get_orientation(lv_obj_t * obj);
+
+/**
+ * Give the bar is in symmetrical mode or not
+ * @param obj       pointer to bar object
+ * @return          true: in symmetrical mode false : not in
+*/
+bool lv_bar_is_symmetrical(lv_obj_t * obj);
+
+#if LV_USE_OBSERVER
+/**
+ * Bind an integer or float Subject to a Bar's value.
+ * @param obj       pointer to Bar
+ * @param subject   pointer to Subject
+ * @return          pointer to newly-created Observer
+ */
+lv_observer_t * lv_bar_bind_value(lv_obj_t * obj, lv_subject_t * subject);
+#endif
 
 /**********************
  *      MACROS

@@ -32,25 +32,22 @@ extern "C" {
  *      TYPEDEFS
  **********************/
 
-/** Roller mode.*/
-enum {
-    LV_ROLLER_MODE_NORMAL, /**< Normal mode (roller ends at the end of the options).*/
-    LV_ROLLER_MODE_INFINITE, /**< Infinite mode (roller can be scrolled forever).*/
+/** Roller mode. */
+typedef enum {
+    LV_ROLLER_MODE_NORMAL,   /**< Normal mode (roller ends at the end of the options). */
+    LV_ROLLER_MODE_INFINITE, /**< Infinite mode (roller can be scrolled forever). */
+} lv_roller_mode_t;
+
+#if LV_USE_OBJ_PROPERTY
+enum _lv_property_roller_id_t {
+    LV_PROPERTY_ID2(ROLLER, OPTIONS,            LV_PROPERTY_TYPE_TEXT,  LV_PROPERTY_TYPE_INT,   0),
+    LV_PROPERTY_ID2(ROLLER, SELECTED,           LV_PROPERTY_TYPE_INT,   LV_PROPERTY_TYPE_INT, 1),
+    LV_PROPERTY_ID(ROLLER, VISIBLE_ROW_COUNT,   LV_PROPERTY_TYPE_INT,   2),
+    LV_PROPERTY_ROLLER_END,
 };
+#endif
 
-typedef uint8_t lv_roller_mode_t;
-
-typedef struct {
-    lv_obj_t obj;
-    uint16_t option_cnt;          /**< Number of options*/
-    uint16_t sel_opt_id;          /**< Index of the current option*/
-    uint16_t sel_opt_id_ori;      /**< Store the original index on focus*/
-    lv_roller_mode_t mode : 1;
-    uint32_t moved : 1;
-} lv_roller_t;
-
-extern const lv_obj_class_t lv_roller_class;
-
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_roller_class;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -79,16 +76,25 @@ void lv_roller_set_options(lv_obj_t * obj, const char * options, lv_roller_mode_
  * Set the selected option
  * @param obj       pointer to a roller object
  * @param sel_opt   index of the selected option (0 ... number of option - 1);
- * @param anim_en   LV_ANIM_ON: set with animation; LV_ANOM_OFF set immediately
+ * @param anim   LV_ANIM_ON: set with animation; LV_ANIM_OFF set immediately
  */
-void lv_roller_set_selected(lv_obj_t * obj, uint16_t sel_opt, lv_anim_enable_t anim);
+void lv_roller_set_selected(lv_obj_t * obj, uint32_t sel_opt, lv_anim_enable_t anim);
+
+/**
+ * Sets the given string as the selection on the roller. Does not alter the current selection on failure.
+ * @param obj               pointer to roller object
+ * @param sel_opt   pointer to the string you want to set as an option
+ * @param anim          LV_ANIM_ON: set with animation; LV_ANIM_OFF set immediately
+ * @return                  `true` if set successfully and `false` if the given string does not exist as an option in the roller
+ */
+bool lv_roller_set_selected_str(lv_obj_t * obj, const char * sel_opt, lv_anim_enable_t anim);
 
 /**
  * Set the height to show the given number of rows (options)
  * @param obj       pointer to a roller object
  * @param row_cnt   number of desired visible rows
  */
-void lv_roller_set_visible_row_count(lv_obj_t * obj, uint8_t row_cnt);
+void lv_roller_set_visible_row_count(lv_obj_t * obj, uint32_t row_cnt);
 
 /*=====================
  * Getter functions
@@ -99,16 +105,15 @@ void lv_roller_set_visible_row_count(lv_obj_t * obj, uint8_t row_cnt);
  * @param obj       pointer to a roller object
  * @return          index of the selected option (0 ... number of option - 1);
  */
-uint16_t lv_roller_get_selected(const lv_obj_t * obj);
+uint32_t lv_roller_get_selected(const lv_obj_t * obj);
 
 /**
  * Get the current selected option as a string.
- * @param obj       pointer to ddlist object
+ * @param obj       pointer to roller object
  * @param buf       pointer to an array to store the string
  * @param buf_size  size of `buf` in bytes. 0: to ignore it.
  */
 void lv_roller_get_selected_str(const lv_obj_t * obj, char * buf, uint32_t buf_size);
-
 
 /**
  * Get the options of a roller
@@ -122,7 +127,18 @@ const char * lv_roller_get_options(const lv_obj_t * obj);
  * @param obj   pointer to a roller object
  * @return      the total number of options
  */
-uint16_t lv_roller_get_option_cnt(const lv_obj_t * obj);
+uint32_t lv_roller_get_option_count(const lv_obj_t * obj);
+
+
+#if LV_USE_OBSERVER
+/**
+ * Bind an integer Subject to a Roller's value.
+ * @param obj       pointer to Roller
+ * @param subject   pointer to Subject
+ * @return          pointer to newly-created Observer
+ */
+lv_observer_t * lv_roller_bind_value(lv_obj_t * obj, lv_subject_t * subject);
+#endif
 
 /**********************
  *      MACROS

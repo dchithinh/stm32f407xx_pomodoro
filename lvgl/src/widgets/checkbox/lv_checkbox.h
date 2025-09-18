@@ -1,5 +1,5 @@
 /**
- * @file lv_cb.h
+ * @file lv_checkbox.h
  *
  */
 
@@ -22,25 +22,7 @@ extern "C" {
  *      DEFINES
  *********************/
 
-/**********************
- *      TYPEDEFS
- **********************/
-
-typedef struct {
-    lv_obj_t obj;
-    char * txt;
-    uint32_t static_txt : 1;
-} lv_checkbox_t;
-
-extern const lv_obj_class_t lv_checkbox_class;
-
-/**
- * `type` field in `lv_obj_draw_part_dsc_t` if `class_p = lv_checkbox_class`
- * Used in `LV_EVENT_DRAW_PART_BEGIN` and `LV_EVENT_DRAW_PART_END`
- */
-typedef enum {
-    LV_CHECKBOX_DRAW_PART_BOX,    /**< The tick box*/
-} lv_checkbox_draw_part_type_t;
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_checkbox_class;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -60,7 +42,7 @@ lv_obj_t * lv_checkbox_create(lv_obj_t * parent);
 /**
  * Set the text of a check box. `txt` will be copied and may be deallocated
  * after this function returns.
- * @param cb    pointer to a check box
+ * @param obj   pointer to a check box
  * @param txt   the text of the check box. NULL to refresh with the current text.
  */
 void lv_checkbox_set_text(lv_obj_t * obj, const char * txt);
@@ -68,7 +50,7 @@ void lv_checkbox_set_text(lv_obj_t * obj, const char * txt);
 /**
  * Set the text of a check box. `txt` must not be deallocated during the life
  * of this checkbox.
- * @param cb    pointer to a check box
+ * @param obj   pointer to a check box
  * @param txt   the text of the check box.
  */
 void lv_checkbox_set_text_static(lv_obj_t * obj, const char * txt);
@@ -79,7 +61,7 @@ void lv_checkbox_set_text_static(lv_obj_t * obj, const char * txt);
 
 /**
  * Get the text of a check box
- * @param cb    pointer to check box object
+ * @param obj   pointer to check box object
  * @return      pointer to the text of the check box
  */
 const char * lv_checkbox_get_text(const lv_obj_t * obj);

@@ -12,7 +12,8 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include "../../../lvgl.h"
+#include "../../lv_conf_internal.h"
+#include "../../indev/lv_indev.h"
 
 #if LV_USE_MONKEY != 0
 
@@ -23,25 +24,29 @@ extern "C" {
 /**********************
  *      TYPEDEFS
  **********************/
-struct _lv_monkey;
-typedef struct _lv_monkey lv_monkey_t;
+
+typedef struct _lv_monkey_t lv_monkey_t;
 
 typedef struct {
-    /**< Input device type*/
+    int32_t min;
+    int32_t max;
+} lv_range_t;
+
+typedef struct {
+    uint32_t min;
+    uint32_t max;
+} lv_urange_t;
+
+struct _lv_monkey_config_t {
+    /** Input device type */
     lv_indev_type_t type;
 
-    /**< Monkey execution period*/
-    struct {
-        uint32_t min;
-        uint32_t max;
-    } period_range;
+    /** Monkey execution period */
+    lv_urange_t period_range;
 
-    /**< The range of input value*/
-    struct {
-        int32_t min;
-        int32_t max;
-    } input_range;
-} lv_monkey_config_t;
+    /** The range of input value */
+    lv_range_t input_range;
+};
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -81,8 +86,6 @@ void lv_monkey_set_enable(lv_monkey_t * monkey, bool en);
  */
 bool lv_monkey_get_enable(lv_monkey_t * monkey);
 
-#if LV_USE_USER_DATA
-
 /**
  * Set the user_data field of the monkey
  * @param monkey   pointer to a monkey
@@ -97,13 +100,11 @@ void lv_monkey_set_user_data(lv_monkey_t * monkey, void * user_data);
  */
 void * lv_monkey_get_user_data(lv_monkey_t * monkey);
 
-#endif/*LV_USE_USER_DATA*/
-
 /**
  * Delete monkey
  * @param monkey pointer to monkey
  */
-void lv_monkey_del(lv_monkey_t * monkey);
+void lv_monkey_delete(lv_monkey_t * monkey);
 
 /**********************
  *      MACROS

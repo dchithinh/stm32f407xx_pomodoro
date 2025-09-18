@@ -14,7 +14,14 @@
         "stm32f4xx_hal_dma.h": "c",
         "config.h": "c",
         "xstring": "c",
-        "stm32f4xx_hal_uart.h": "c"
+        "stm32f4xx_hal_uart.h": "c",
+        "string.h": "c",
+        "lvgl.h": "c",
+        "lv_init.h": "c",
+        "lv_indev.h": "c",
+        "lv_display.h": "c",
+        "lv_log.h": "c",
+        "lv_conf_internal.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -81,13 +81,6 @@ void HAL_MspInit(void)
 
 
 /* USER CODE BEGIN 1 */
-void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
-{
-  /* For later references
-   * We don't need to intialize SPI pins here
-   * All are done in lcd_pin_init();
-  */
-}
 
 void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {

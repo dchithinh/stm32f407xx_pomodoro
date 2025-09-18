@@ -1,5 +1,5 @@
 /**
- * @file lv_templ.h
+ * @file lv_objx_templ.h
  *
  */
 
@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef LV_TEMPL_H
-#define LV_TEMPL_H
+#ifndef LV_OBJX_TEMPL_H
+#define LV_OBJX_TEMPL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +39,7 @@ typedef struct {
     /*New data for this type*/
 } lv_templ_t;
 
-extern const lv_obj_class_t lv_templ_class;
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_templ_class;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -78,4 +78,4 @@ lv_obj_t * lv_templ_create(lv_obj_t * parent);
 } /*extern "C"*/
 #endif
 
-#endif /*LV_TEMPL_H*/
+#endif /*LV_OBJX_TEMPL_H*/

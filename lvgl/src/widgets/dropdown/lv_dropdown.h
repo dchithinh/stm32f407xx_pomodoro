@@ -31,32 +31,24 @@ extern "C" {
 #define LV_DROPDOWN_POS_LAST 0xFFFF
 LV_EXPORT_CONST_INT(LV_DROPDOWN_POS_LAST);
 
-/**********************
- *      TYPEDEFS
- **********************/
+#if LV_USE_OBJ_PROPERTY
+enum _lv_property_dropdown_id_t {
+    LV_PROPERTY_ID(DROPDOWN, TEXT,                LV_PROPERTY_TYPE_TEXT,  0),
+    LV_PROPERTY_ID(DROPDOWN, OPTIONS,             LV_PROPERTY_TYPE_TEXT,  1),
+    LV_PROPERTY_ID(DROPDOWN, OPTION_COUNT,        LV_PROPERTY_TYPE_INT,   2),
+    LV_PROPERTY_ID(DROPDOWN, SELECTED,            LV_PROPERTY_TYPE_INT,   3),
+    // LV_PROPERTY_ID(DROPDOWN, SELECTED_STR,        LV_PROPERTY_TYPE_TEXT,  4),
+    LV_PROPERTY_ID(DROPDOWN, DIR,                 LV_PROPERTY_TYPE_INT,   5),
+    LV_PROPERTY_ID(DROPDOWN, SYMBOL,              LV_PROPERTY_TYPE_TEXT,  6),
+    LV_PROPERTY_ID(DROPDOWN, SELECTED_HIGHLIGHT,  LV_PROPERTY_TYPE_INT,   7),
+    LV_PROPERTY_ID(DROPDOWN, LIST,                LV_PROPERTY_TYPE_OBJ,   8),
+    LV_PROPERTY_ID(DROPDOWN, IS_OPEN,             LV_PROPERTY_TYPE_BOOL,  9),
+    LV_PROPERTY_DROPDOWN_END,
+};
+#endif
 
-typedef struct {
-    lv_obj_t obj;
-    lv_obj_t * list;                /**< The dropped down list*/
-    const char * text;              /**< Text to display on the dropdown's button*/
-    const void * symbol;            /**< Arrow or other icon when the drop-down list is closed*/
-    char * options;                 /**< Options in a '\n' separated list*/
-    uint16_t option_cnt;            /**< Number of options*/
-    uint16_t sel_opt_id;            /**< Index of the currently selected option*/
-    uint16_t sel_opt_id_orig;       /**< Store the original index on focus*/
-    uint16_t pr_opt_id;             /**< Index of the currently pressed option*/
-    lv_dir_t dir              : 4;  /**< Direction in which the list should open*/
-    uint8_t static_txt        : 1;  /**< 1: Only a pointer is saved in `options`*/
-    uint8_t selected_highlight: 1;  /**< 1: Make the selected option highlighted in the list*/
-} lv_dropdown_t;
-
-typedef struct {
-    lv_obj_t obj;
-    lv_obj_t * dropdown;
-} lv_dropdown_list_t;
-
-extern const  lv_obj_class_t lv_dropdown_class;
-extern const  lv_obj_class_t lv_dropdownlist_class;
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_dropdown_class;
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_dropdownlist_class;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -117,7 +109,7 @@ void lv_dropdown_clear_options(lv_obj_t * obj);
  * @param obj       pointer to drop-down list object
  * @param sel_opt   id of the selected option (0 ... number of option - 1);
  */
-void lv_dropdown_set_selected(lv_obj_t * obj, uint16_t sel_opt);
+void lv_dropdown_set_selected(lv_obj_t * obj, uint32_t sel_opt);
 
 /**
  * Set the direction of the a drop-down list
@@ -172,14 +164,14 @@ const char * lv_dropdown_get_options(const lv_obj_t * obj);
  * @param obj       pointer to drop-down list object
  * @return          index of the selected option (0 ... number of option - 1);
  */
-uint16_t lv_dropdown_get_selected(const lv_obj_t * obj);
+uint32_t lv_dropdown_get_selected(const lv_obj_t * obj);
 
 /**
  * Get the total number of options
  * @param obj       pointer to drop-down list object
  * @return          the total number of options in the list
  */
-uint16_t lv_dropdown_get_option_cnt(const lv_obj_t * obj);
+uint32_t lv_dropdown_get_option_count(const lv_obj_t * obj);
 
 /**
  * Get the current selected option as a string
@@ -224,7 +216,7 @@ lv_dir_t lv_dropdown_get_dir(const lv_obj_t * obj);
 
 /**
  * Open the drop.down list
- * @param obj       pointer to drop-down list object
+ * @param dropdown_obj       pointer to drop-down list object
  */
 void lv_dropdown_open(lv_obj_t * dropdown_obj);
 
@@ -240,6 +232,17 @@ void lv_dropdown_close(lv_obj_t * obj);
  * @return          true if the list os opened
  */
 bool lv_dropdown_is_open(lv_obj_t * obj);
+
+
+#if LV_USE_OBSERVER
+/**
+ * Bind an integer Subject to a Dropdown's value.
+ * @param obj       pointer to Dropdown
+ * @param subject   pointer to Subject
+ * @return          pointer to newly-created Observer
+ */
+lv_observer_t * lv_dropdown_bind_value(lv_obj_t * obj, lv_subject_t * subject);
+#endif
 
 /**********************
  *      MACROS
