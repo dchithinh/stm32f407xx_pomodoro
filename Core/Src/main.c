@@ -139,13 +139,12 @@ static void touch_cursor_cb(lv_timer_t * t)
 
 void create_touch_cursor(void)
 {
-    lv_obj_t * cursor = lv_label_create(lv_scr_act());
+    lv_obj_t * cursor = lv_label_create(lv_screen_active());
     lv_label_set_text(cursor, "+");
 
     // Attach cursor as user data
     lv_timer_create(touch_cursor_cb, 30, cursor);
 }
-
 
 
 /**
@@ -173,8 +172,9 @@ int main(void)
   // lv_example_style_3();
   // lv_example_button_1();
   // lv_example_event_click();
-
-create_touch_cursor();
+  lv_example_style_7();
+  
+// create_touch_cursor();
 
   
   while (1)

@@ -90,7 +90,7 @@ void tft_init(void)
     // Optional: attach monitor callback
     lv_display_add_event_cb(display, monitor_cb, LV_EVENT_FLUSH_FINISH, NULL);
 
-    lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
+    lv_display_set_rotation(display, LV_DISPLAY_ROTATION_0);
 
     // Store user data if needed
     lv_display_set_user_data(display, (void *)&lcd_handle);

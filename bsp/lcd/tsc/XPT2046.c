@@ -193,6 +193,7 @@ void xpt2046_read(lv_indev_t * indev, lv_indev_data_t * data)
     uint8_t irq = LV_DRV_INDEV_IRQ_READ;
 
     if(irq == 0) {
+      
         LV_DRV_INDEV_SPI_CS(0);
 
         LV_DRV_INDEV_SPI_XCHG_BYTE(CMD_X_READ);   // Start x read
@@ -210,6 +211,8 @@ void xpt2046_read(lv_indev_t * indev, lv_indev_data_t * data)
         // Normalize Data
         x = x >> 3;
         y = y >> 3;
+        LV_LOG_USER("RAW X=%d, Y=%d", x, y);
+        
         xpt2046_corr(&x, &y);
         xpt2046_avg(&x, &y);
 
@@ -217,7 +220,7 @@ void xpt2046_read(lv_indev_t * indev, lv_indev_data_t * data)
         last_y = y;
         data->state = LV_INDEV_STATE_PRESSED;
 
-        LV_LOG_USER("RAW X=%d, Y=%d, STATE=%d", x, y, data->state);
+        
 
         LV_DRV_INDEV_SPI_CS(1);
     } else {
@@ -267,8 +270,6 @@ static void xpt2046_corr(int16_t * x, int16_t * y)
 #if XPT2046_Y_INV != 0
     (*y) =  XPT2046_VER_RES - (*y);
 #endif
-
-
 
 }
 

@@ -360,14 +360,14 @@
 #if USE_XPT2046
 #  define XPT2046_HOR_RES     240
 #  define XPT2046_VER_RES     320
-#  define XPT2046_X_MIN       200
-#  define XPT2046_Y_MIN       300
-#  define XPT2046_X_MAX       3800
-#  define XPT2046_Y_MAX       3800
+#  define XPT2046_X_MIN       494
+#  define XPT2046_Y_MIN       327
+#  define XPT2046_X_MAX       3503
+#  define XPT2046_Y_MAX       3729
 #  define XPT2046_AVG         4
-#  define XPT2046_X_INV       0
-#  define XPT2046_Y_INV       0
-#  define XPT2046_XY_SWAP     1
+#  define XPT2046_X_INV       1
+#  define XPT2046_Y_INV       1
+#  define XPT2046_XY_SWAP     0
 #endif
 
 /*-----------------
