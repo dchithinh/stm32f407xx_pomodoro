@@ -25,6 +25,8 @@
 #include "tft.h"
 #include "touchpad.h"
 
+#include "main_screen.h"
+
 
 #define RGB888(r,g,b)  (((r) << 16) | ((g) << 8) | (b))
 
@@ -37,6 +39,16 @@
 #define RED   		RGB888(255,0,0)
 #define WHITE   	RGB888(255,255,255)
 #define BLACK		  RGB888(0,0,0)
+
+
+/* make linker symbols visible to debugger & C */
+extern char __HeapBase, __HeapLimit, __StackTop;
+
+volatile uintptr_t heap_base_addr;
+volatile uintptr_t heap_limit_addr;
+volatile uintptr_t stack_top_addr;
+volatile uintptr_t sp_value;
+register char *sp asm("sp"); /* the current stack pointer register */
 
 UART_HandleTypeDef huart2;
 
@@ -101,6 +113,48 @@ void usart2_puts_it(const char *s)
     }
 }
 
+extern char _end;   // from linker
+extern char _estack;
+
+void hard_fault_handler_c(uint32_t *stack) {
+    // uint32_t msp = __get_MSP();
+    // uint32_t psp = __get_PSP();
+
+    // LV_LOG_USER("\n[HardFault]\n");
+    // LV_LOG_USER("R0=0x%08lX R1=0x%08lX R2=0x%08lX R3=0x%08lX\n",
+    //        (unsigned long)stack[0], (unsigned long)stack[1],
+    //        (unsigned long)stack[2], (unsigned long)stack[3]);
+    // LV_LOG_USER("R12=0x%08lX LR=0x%08lX PC=0x%08lX PSR=0x%08lX\n",
+    //        (unsigned long)stack[4], (unsigned long)stack[5],
+    //        (unsigned long)stack[6], (unsigned long)stack[7]);
+
+    // LV_LOG_USER("MSP=0x%08lX PSP=0x%08lX &_end=0x%08lX _estack=0x%08lX\n",
+    //        (unsigned long)msp, (unsigned long)psp,
+    //        (unsigned long)&_end, (unsigned long)&_estack);
+
+    // LV_LOG_USER("Free approx (MSP - &_end) = %lu bytes\n",
+    //        (unsigned long)(msp - (uint32_t)&_end));
+
+    // LV_LOG_USER("SCB->CFSR=0x%08lX SCB->HFSR=0x%08lX SCB->BFAR=0x%08lX SCB->MMFAR=0x%08lX\n",
+    //        (unsigned long)SCB->CFSR, (unsigned long)SCB->HFSR,
+    //        (unsigned long)SCB->BFAR, (unsigned long)SCB->MMFAR);
+
+    // // Helpful: dump a small region of stack memory around SP
+    // uint32_t *sp = (uint32_t*)msp;
+    // LV_LOG_USER("Stack dump (top 16 words):\n");
+    // for (int i = 0; i < 16; i++) {
+    //     LV_LOG_USER(" %02d: 0x%08lX\n", i, (unsigned long)sp[i]);
+    // }
+
+  register uint32_t sp_val __asm("sp");
+  extern char __HeapLimit, __StackTop;
+
+  LV_LOG_USER("\nHardFault! SP=%08lx  HeapLimit=%08lx  StackTop=%08lx\n",
+          sp_val, (uint32_t)&__HeapLimit, (uint32_t)&__StackTop);
+
+
+    while(1);
+}
 
 void my_log_cb(lv_log_level_t level, const char * buf)
 {
@@ -146,7 +200,6 @@ void create_touch_cursor(void)
     lv_timer_create(touch_cursor_cb, 30, cursor);
 }
 
-
 /**
   * @brief  The application entry point.
   * @retval int
@@ -154,6 +207,10 @@ void create_touch_cursor(void)
 int main(void)
 {
 
+  heap_base_addr  = (uintptr_t)&__HeapBase;
+  heap_limit_addr = (uintptr_t)&__HeapLimit;
+  stack_top_addr  = (uintptr_t)&__StackTop;
+  sp_value        = (uintptr_t)sp;
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
@@ -167,15 +224,7 @@ int main(void)
   tft_init();
   touchpad_init();
 
-// lv_example_anim_2();
-// lv_example_grad_1();
-  // lv_example_style_3();
-  // lv_example_button_1();
-  // lv_example_event_click();
-  lv_example_style_7();
-  
-// create_touch_cursor();
-
+  ui_main_screen(lv_scr_act());
   
   while (1)
   {
