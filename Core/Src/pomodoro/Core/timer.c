@@ -82,7 +82,7 @@ bool timer_is_running(void) {
 void timer_tick_handler(void)
 {
     if (!tmr.running || tmr.paused) {
-        LV_LOG_USER("[TIMER] Not running or paused\n");
+        // LV_LOG_USER("[TIMER] Not running or paused\n");
         return;
     }
 

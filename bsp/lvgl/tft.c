@@ -88,7 +88,7 @@ void tft_init(void)
     lv_display_set_flush_cb(display, tft_flush);
 
     // Optional: attach monitor callback
-    lv_display_add_event_cb(display, monitor_cb, LV_EVENT_FLUSH_FINISH, NULL);
+    // lv_display_add_event_cb(display, monitor_cb, LV_EVENT_FLUSH_FINISH, NULL);
 
     lv_display_set_rotation(display, LV_DISPLAY_ROTATION_0);
 

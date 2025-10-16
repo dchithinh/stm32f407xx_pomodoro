@@ -8,6 +8,7 @@
  * SPI_BAUDRATEPRESCALER_X in lcd_spi_init()
  */
 #define USE_HSI_16MHZ 		0
+#define USE_HSI_84MHZ 		1
 
 
 #define USE_DMA_FLUSH_LCD	    0
