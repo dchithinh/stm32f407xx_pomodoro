@@ -41,6 +41,7 @@ This project was inspired by [niekiran/EmbeddedGraphicsLVGL-MCU3] (https://githu
 ✅ LCD Initialization  
 ✅ Send command and data via SPI  
 ✅ Add function to fill background with colors
+✅ Integrate pomodoro app(branch `pomodoro_app`)
 
 ---
 
@@ -52,12 +53,9 @@ Throughout this project, I encountered several interesting challenges and gained
 
 #### HAL SPI Issues at Low Clock Speeds
 
-Initially, I used the internal **HSI (16 MHz)** with SPI configured at **1–2 MHz**. Although the logic analyzer showed that all SPI commands were sent correctly using the STM32 HAL API, the LCD did not initialize or display properly.
-
-To debug this, I modified `lcd_send_command()` and `lcd_send_data()` to use **register-level access** instead of HAL functions — and this **worked** with SPI at 1–2 MHz.
-
-Then I realized that the **low SPI speed** might be the root cause of the issue. So I switched the system clock source to **PLL at 168 MHz**, and surprisingly, the **HAL SPI API** started working as expected.
-
+- Initially, I used the internal **HSI (16 MHz)** with SPI configured at **1–2 MHz**. Although the logic analyzer showed that all SPI commands were sent correctly using the STM32 HAL API, the LCD did not initialize or display properly. To debug this, I modified `lcd_send_command()` and `lcd_send_data()` to use **register-level access** instead of HAL functions — and this **worked** with SPI at 1–2 MHz. Then I realized that the **low SPI speed** might be the root cause of the issue. So I switched the system clock source to **PLL at 168 MHz**, and surprisingly, the **HAL SPI API** started working as expected.
+- Update on next few days:
+Root cause: the real root cause of this is not about SPI spread, it is because of bugs in `lcd_send_data()` function. After fixing `lcd_send_data()` the LCD start to work with 1-2MHz SPI but of course low FPS
 ---
 
 #### Unable to Read Data from LCD (e.g., ID, Status)
@@ -86,5 +84,6 @@ This part still needs improvement, or at least a clearer understanding of how to
 ![alt text](Doc/RGB.png)
 
 ### Happy learning !!!!
+
 
 

@@ -180,57 +180,57 @@ uint8_t xpt2046_irq_pin_read(void)
 /**
  * Get the current position and state of the touchpad
  * @param data store the read data here
- * @return false: because no ore data to be read
+ * @return false: because no store data to be read
  */
 void xpt2046_read(lv_indev_t * indev, lv_indev_data_t * data)
 {
     static int16_t last_x = 0;
     static int16_t last_y = 0;
+    static bool last_pressed = false;
 
-    int16_t x = 0;
-    int16_t y = 0;
+    bool pressed = (LV_DRV_INDEV_IRQ_READ == 0);
 
-    uint8_t irq = LV_DRV_INDEV_IRQ_READ;
-
-    if(irq == 0) {
-      
+    if (pressed) {
         LV_DRV_INDEV_SPI_CS(0);
 
-        LV_DRV_INDEV_SPI_XCHG_BYTE(CMD_X_READ);   // Start x read
-
-        uint8_t buf = LV_DRV_INDEV_SPI_XCHG_BYTE(0); // Read x MSB
-        x = buf << 8;
-        buf = LV_DRV_INDEV_SPI_XCHG_BYTE(CMD_Y_READ); // Until x LSB, y command can be sent
+        LV_DRV_INDEV_SPI_XCHG_BYTE(CMD_X_READ);
+        uint8_t buf = LV_DRV_INDEV_SPI_XCHG_BYTE(0);
+        int16_t x = buf << 8;
+        buf = LV_DRV_INDEV_SPI_XCHG_BYTE(CMD_Y_READ);
         x += buf;
 
-        buf = LV_DRV_INDEV_SPI_XCHG_BYTE(0); // Read y MSB
-        y = buf << 8;
-        buf = LV_DRV_INDEV_SPI_XCHG_BYTE(0); // Read y LSB
+        buf = LV_DRV_INDEV_SPI_XCHG_BYTE(0);
+        int16_t y = buf << 8;
+        buf = LV_DRV_INDEV_SPI_XCHG_BYTE(0);
         y += buf;
 
-        // Normalize Data
-        x = x >> 3;
-        y = y >> 3;
-        LV_LOG_USER("RAW X=%d, Y=%d", x, y);
-        
+        LV_DRV_INDEV_SPI_CS(1);
+
+        x >>= 3;
+        y >>= 3;
+
         xpt2046_corr(&x, &y);
         xpt2046_avg(&x, &y);
 
         last_x = x;
         last_y = y;
-        data->state = LV_INDEV_STATE_PRESSED;
-
-        
-
-        LV_DRV_INDEV_SPI_CS(1);
-    } else {
-        x = last_x;
-        y = last_y;
-        data->state = LV_INDEV_STATE_RELEASED;
     }
 
-    data->point.x = x;
-    data->point.y = y;
+    data->point.x = last_x;
+    data->point.y = last_y;
+    data->state   = pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+
+    /* Debug logs to verify */
+    if (pressed && !last_pressed)
+        LV_LOG_USER("[TOUCH] PRESSED (%d,%d)", last_x, last_y);
+    else if (!pressed && last_pressed) {
+      data->point.x = -1;
+      data->point.y = -1;
+      LV_LOG_USER("[TOUCH] RELEASED (%d,%d)", last_x, last_y);
+    }
+
+
+    last_pressed = pressed;
 }
 
 
