@@ -27,8 +27,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-  extern DMA_HandleTypeDef lcd_dma_handle;
-  extern void hard_fault_handler_c(uint32_t *stack);
+extern DMA_HandleTypeDef lcd_dma_handle;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -86,15 +85,6 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-	__asm volatile
-	    (
-	        "TST lr, #4 \n"           // Test EXC_RETURN bit to decide which stack pointer to use
-	        "ITE EQ \n"
-	        "MRSEQ r0, MSP \n"        // If bit 2 == 0 -> Main stack pointer
-	        "MRSNE r0, PSP \n"        // Else -> Process stack pointer
-	        "B hard_fault_handler_c \n"
-	    );
-  
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

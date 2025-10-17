@@ -1,89 +1,335 @@
-# 🖥️ STM32F407 + ILI9341 2.4" LCD (SPI) Communication
+# 🍅 STM32F407 Pomodoro Timer with ILI9341 LCD
 
-This project demonstrates how to communicate with a 2.4" TFT LCD using the **ILI9341 controller** via **SPI interface** on the **STM32F407** microcontroller.
+A **Pomodoro Timer** application built for the **STM32F407** microcontroller with a **2.4" ILI9341 TFT LCD** display and **LVGL** graphics library. This project demonstrates embedded GUI development, SPI communication, and real-time timer functionality.
 
-It's built for **learning purposes**, focusing on how SPI communication works and how to interface with graphical displays at a low level.
-
----
-
-## Acknowledgments
-This project was inspired by [niekiran/EmbeddedGraphicsLVGL-MCU3] (https://github.com/niekiran/EmbeddedGraphicsLVGL-MCU3/tree/main).
+<div align="center">
+  <img src="https://github.com/dchithinh/stm32f407xx_pomodoro/blob/master/Doc/pomo_demo.png" alt="Project Demo" width="400">
+</div>
 
 ---
 
-## 🖼️ LCD Specs
+## 📋 Table of Contents
 
-- **Size**: 2.4 inches
-- **Resolution**: 240x320
-- **Driver IC**: ILI9341
-- **Interface**: 4-wire SPI
-- **Supply Voltage**: 5V
-
----
-## Wiring Table  (hw_def.h)
-| LCD Pin      | STM32F407 Pin | Description           |
-| ------------ | ------------- | --------------------- |
-| **VCC**      | 5V            | Power Supply          |
-| **GND**      | GND           | Ground                |
-| **CS**       | PB9           | Chip Select           |
-| **RESX**     | PD10          | Reset (Active Low)    |
-| **DCX**      | PD9           | Data/Command Select   |
-| **SDI/MOSI** | PB15          | SPI MOSI (SPI2)       |
-| **SDO/MISO** | PC2           | SPI MISO (optional)   |
-| **SCK**      | PB13          | SPI Clock (SPI2)      |
-| **LED**      | 5V            | Backlight (Always On) |
-
-
----
-
-## 🔄 Features (Current)
-
-✅ LCD Initialization  
-✅ Send command and data via SPI  
-✅ Add function to fill background with colors
-✅ Integrate pomodoro app(branch `pomodoro_app`)
-
----
-
-### 📘 Lessons Learned
-
-Throughout this project, I encountered several interesting challenges and gained valuable insights into working with STM32 and SPI-based LCDs. Here are some of the key lessons learned:
+- [🍅 STM32F407 Pomodoro Timer with ILI9341 LCD](#-stm32f407-pomodoro-timer-with-ili9341-lcd)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [✨ Features](#-features)
+  - [🎯 Project Overview](#-project-overview)
+  - [🖥️ Try Before You Build - Windows Simulator](#️-try-before-you-build---windows-simulator)
+  - [🛠️ Hardware Requirements](#️-hardware-requirements)
+  - [🔌 Hardware Connections](#-hardware-connections)
+    - [LCD Display Connections (SPI2)](#lcd-display-connections-spi2)
+    - [Touch Controller Connections (SPI1)](#touch-controller-connections-spi1)
+    - [Debug UART (USART2)](#debug-uart-usart2)
+  - [⚙️ Software Requirements](#️-software-requirements)
+  - [🚀 Getting Started](#-getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Building the Project](#building-the-project)
+    - [Flashing to MCU](#flashing-to-mcu)
+  - [📖 Usage](#-usage)
+    - [Debug Output](#debug-output)
+  - [🏗️ Project Structure](#️-project-structure)
+  - [🔧 Configuration](#-configuration)
+    - [Clock Configuration](#clock-configuration)
+    - [Display Configuration](#display-configuration)
+    - [Debug Configuration](#debug-configuration)
+  - [📚 Technical Notes](#-technical-notes)
+    - [SPI Communication](#spi-communication)
+    - [LVGL Integration](#lvgl-integration)
+    - [Known Issues](#known-issues)
+  - [🤝 Contributing](#-contributing)
+    - [💡 Fun Fact](#-fun-fact)
+    - [Contribution Guidelines](#contribution-guidelines)
+  - [🙏 Acknowledgments](#-acknowledgments)
+  - [📬 Contact](#-contact)
 
 ---
 
-#### HAL SPI Issues at Low Clock Speeds
+## ✨ Features
 
-- Initially, I used the internal **HSI (16 MHz)** with SPI configured at **1–2 MHz**. Although the logic analyzer showed that all SPI commands were sent correctly using the STM32 HAL API, the LCD did not initialize or display properly. To debug this, I modified `lcd_send_command()` and `lcd_send_data()` to use **register-level access** instead of HAL functions — and this **worked** with SPI at 1–2 MHz. Then I realized that the **low SPI speed** might be the root cause of the issue. So I switched the system clock source to **PLL at 168 MHz**, and surprisingly, the **HAL SPI API** started working as expected.
-- Update on next few days:
-Root cause: the real root cause of this is not about SPI spread, it is because of bugs in `lcd_send_data()` function. After fixing `lcd_send_data()` the LCD start to work with 1-2MHz SPI but of course low FPS
----
-
-#### Unable to Read Data from LCD (e.g., ID, Status)
-
-I attempted to read data from the LCD (e.g., display **ID** and **status registers**), but failed to get valid responses.  
-I'm still unsure whether this is due to:
-
-- Hardware limitations of the LCD module, or  
-- Issues in my **SPI read implementation**
-
-Further investigation is required.
+- 🍅 **Full Pomodoro Timer** functionality (25min work, 5min break cycles (Configurable) )
+- 📱 **Touch-enabled GUI** with LVGL graphics library
+- 🖥️ **2.4" ILI9341 LCD** display (240x320 resolution)
+- 🔧 **Modular code structure** with separated concerns
+- 🐛 **UART debugging** support with formatted logging
+- ⚡ **Multiple clock configurations** (16MHz HSI, 84MHz, 168MHz)
+- 🎨 **Beautiful UI** with progress indicators and animations
+- 🔄 **Touch cursor debugging** for input validation
+- 📊 **Statistics tracking** for completed sessions
 
 ---
 
-#### 16-bit Write with HAL API Unclear
+## 🎯 Project Overview
 
-In the `lcd_write()` function, I needed to send **16-bit data** to the LCD.
+This project was built for **learning purposes**, focusing on:
+- **Embedded GUI development** with LVGL
+- **SPI communication** with LCD displays
+- **Real-time timer applications**
+- **STM32 HAL library** usage and best practices
+- **Modular embedded software architecture**
 
-However, I couldn't get `HAL_SPI_Transmit()` to work properly with **16-bit transfers** using a `uint8_t *` buffer. As a result, I had to fall back to **direct register-level SPI access** to manually transmit the data.
-
-This part still needs improvement, or at least a clearer understanding of how to configure **HAL SPI** to transmit 16-bit values using an 8-bit buffer.
+The Pomodoro Technique is a time management method that uses 25-minute work intervals followed by short breaks, helping improve focus and productivity.
 
 ---
 
-### Using functions `ili9341_test_draw_color_bars()`
-![alt text](Doc/RGB.png)
+## 🖥️ Try Before You Build - Windows Simulator
 
-### Happy learning !!!!
+**Want to experience the Pomodoro app before building the hardware?**
+
+Check out **[MicroPomo](https://github.com/dchithinh/MicroPomo)** - a Windows simulator that runs the exact same Pomodoro application with identical UI and functionality. This allows you to:
+
+- 🎮 **Test the complete user interface** and timer functionality
+- 🔍 **Explore all features** without any hardware setup
+- 📱 **Experience the touch interactions** using mouse input
+- ⚡ **Quick evaluation** before investing in STM32 hardware
+- 🎯 **Perfect for demonstrations** and proof-of-concept
+
+The simulator uses the same LVGL code base, providing an authentic preview of what you'll get on the actual STM32 hardware.
+
+**[👉 Try MicroPomo Simulator Now](https://github.com/dchithinh/MicroPomo)**
+
+---
+
+## 🛠️ Hardware Requirements
+
+| Component | Specification | Notes |
+|-----------|--------------|--------|
+| **Microcontroller** | STM32F407VGT6 | ARM Cortex-M4, 168MHz |
+| **Display** | 2.4" ILI9341 LCD | 240x320, SPI interface |
+| **Touch Controller** | XPT2046 | SPI touch controller |
+| **Development Board** | STM32F4 Discovery | Or compatible STM32F407 board |
+| **Power Supply** | 5V | For LCD backlight |
+| **Debugger** | ST-Link/V2 | For programming and debugging |
+
+---
+
+## 🔌 Hardware Connections
+
+### LCD Display Connections (SPI2)
+| LCD Pin | STM32F407 Pin | Function | Notes |
+|---------|---------------|----------|-------|
+| **VCC** | 5V | Power Supply | External 5V required |
+| **GND** | GND | Ground | Common ground |
+| **CS** | PB9 | Chip Select | Active low |
+| **RESX** | PD10 | Reset | Active low |
+| **DCX** | PD9 | Data/Command | Data=1, Command=0 |
+| **SDI/MOSI** | PB15 | SPI MOSI | SPI2 data out |
+| **SDO/MISO** | PC2 | SPI MISO | Optional for reading |
+| **SCK** | PB13 | SPI Clock | SPI2 clock |
+| **LED** | 5V | Backlight | Always on |
+
+### Touch Controller Connections (SPI1)
+| Touch Pin | STM32F407 Pin | Function | Notes |
+|-----------|---------------|----------|-------|
+| **T_CLK** | PA5 | Touch SPI Clock | SPI1_SCK |
+| **T_CS** | PA15 | Touch Chip Select | Manual GPIO control |
+| **T_DIN** | PA7 | Touch Data In | SPI1_MOSI |
+| **T_DO** | PA6 | Touch Data Out | SPI1_MISO |
+| **T_IRQ** | PA8 | Touch Interrupt | GPIO input |
+
+### Debug UART (USART2)
+| UART Pin | STM32F407 Pin | Function | Notes |
+|----------|---------------|----------|-------|
+| **TX** | PA2 | Debug output | USART2_TX (AF7) |
+| **RX** | PA3 | Debug input | USART2_RX (AF7) |
+
+---
+
+## ⚙️ Software Requirements
+
+- **STM32CubeIDE** Version: 1.17.0
+- **STM32CubeMX** (for configuration)
+- **STM32 HAL Library** (included)
+- **LVGL v9.4.0** (included as submodule)
+- **Git** (for cloning repository)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+1. Install **STM32CubeIDE** from [STMicroelectronics website](https://www.st.com/en/development-tools/stm32cubeide.html)
+2. Install **Git** for version control
+3. Have your **STM32F407** board and **ILI9341 LCD** ready
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/dchithinh/stm32f407xx_pomodoro.git
+   cd stm32f407xx_pomodoro
+   ```
+
+2. **Initialize LVGL submodule:**
+   ```bash
+   git submodule update --init --recursive
+   ```
+
+3. **Open in STM32CubeIDE:**
+   - File → Import → Existing Projects into Workspace
+   - Select the project folder
+
+### Building the Project
+
+1. **Configure build:**
+   - Right-click project → Properties → C/C++ Build
+   - Select your preferred configuration (Debug/Release)
+
+2. **Build the project:**
+   - Press `Ctrl+B` or use Project → Build Project
+
+### Flashing to MCU
+
+1. **Connect ST-Link debugger** to your STM32F407 board
+2. **Flash the firmware:**
+   - Right-click project → Run As → STM32 C/C++ Application
+   - Or use the debug configuration for development
+
+---
+
+## 📖 Usage
+
+1. **Power on** the system
+2. **Touch the screen** to interact with the Pomodoro timer
+3. **Start a session** by tapping the start button
+4. **Monitor progress** through the circular progress indicator
+5. **Take breaks** when prompted between work sessions
+6. **View statistics** to track your productivity
+
+### Debug Output
+
+Connect a **USB-to-TTL adapter** to UART2 pins (PA2/PA3) to see debug output:
+- **Baud rate:** 115200
+- **Data bits:** 8
+- **Stop bits:** 1
+- **Parity:** None
+
+---
+
+## 🏗️ Project Structure
+
+```
+stm32f407xx_pomodoro/
+├── 📁 Core/
+│   ├── 📁 Inc/           # Header files
+│   │   ├── main.h
+│   │   ├── clock_config.h
+│   │   └── debug_utils.h
+│   └── 📁 Src/           # Source files
+│       ├── main.c
+│       ├── clock_config.c
+│       └── debug_utils.c
+├── 📁 bsp/              # Board Support Package
+│   ├── 📁 lcd/          # LCD driver
+│   └── 📁 lvgl/         # LVGL port
+├── 📁 lvgl/             # LVGL library (submodule)
+├── 📁 Drivers/          # STM32 HAL drivers
+├── 📁 Doc/              # Documentation and images
+└── 📄 README.md         # This file
+```
+
+---
+
+## 🔧 Configuration
+
+### Clock Configuration
+
+The project supports multiple clock configurations in `clock_config.h`:
+
+```c
+// Uncomment one of the following:
+// #define USE_HSI_16MHZ    1    // 16MHz HSI
+// #define USE_HSI_84MHZ    1    // 84MHz PLL
+// Default: 168MHz HSE PLL
+```
+
+### Display Configuration
+
+Display settings are configured in `bsp/lcd/config.h`:
+- **Resolution:** 240x320
+- **Color depth:** 16-bit RGB565
+- **Orientation:** Portrait/Landscape
+
+### Debug Configuration
+
+Debug features can be enabled/disabled in `debug_utils.h`:
+- **UART logging:** Enable/disable debug output
+- **Touch cursor:** Visual touch point indicator
+
+---
+
+## 📚 Technical Notes
+
+### SPI Communication
+
+The project uses **SPI2** for LCD communication with the following settings:
+- **Mode:** Full-duplex master
+- **Clock polarity:** Low (CPOL=0)
+- **Clock phase:** 1st edge (CPHA=0)
+- **Data size:** 8-bit
+- **MSB first**
+
+### LVGL Integration
+
+- **Version:** LVGL v9.4.0
+- **Color depth:** 16-bit (RGB565)
+- **Memory:** Static allocation
+- **Input:** Touch controller integration
+
+### Known Issues
+
+1. **SPI Read Operations:** Unable to read LCD ID/status registers reliably
+2. **16-bit HAL SPI:** Issues with 16-bit transfers using HAL API
+3. **Touch Input Lag:** On first touch at a new position, the system may respond to the previous touch location. A second touch is required to register the correct position.
+4. **System Stability at 168MHz:** When using 168MHz system clock configuration, the system occasionally hangs or generates hard faults. Consider using 84MHz configuration for more stable operation.
+
+---
+
+## 🤝 Contributing
+
+### 💡 Fun Fact
+
+I'm an **embedded developer, not a UI/UX designer** - so the UI in this app may not be that great! 😅 Feel free to improve the user interface and make it more beautiful. The original purpose of this project was to learn **LVGL**, **STM32 HAL**, and **SPI communication** - and I'm always excited to see how the community can enhance it further!
+
+---
+
+Contributions are welcome! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Contribution Guidelines
+
+- Follow the existing code style
+- Add comments for complex functions
+- Test your changes thoroughly
+- Update documentation as needed
+
+---
+
+## 🙏 Acknowledgments
+
+- **[niekiran/EmbeddedGraphicsLVGL-MCU3](https://github.com/niekiran/EmbeddedGraphicsLVGL-MCU3)** - Original inspiration
+- **[LVGL Team](https://lvgl.io/)** - Amazing graphics library
+- **[STMicroelectronics](https://www.st.com/)** - STM32 ecosystem and HAL library
+- **[MicroPomo](https://github.com/dchithinh/MicroPomo)** - Windows simulator for testing the Pomodoro app
+- **Embedded systems community** - For knowledge sharing and support
+
+---
+
+## 📬 Contact
+
+- **GitHub:** [@dchithinh](https://github.com/dchithinh)
+- **Project Link:** [https://github.com/dchithinh/stm32f407xx_pomodoro](https://github.com/dchithinh/stm32f407xx_pomodoro)
+
+---
+
+⭐ **Star this repository** if you found it helpful!
+
 
 
 

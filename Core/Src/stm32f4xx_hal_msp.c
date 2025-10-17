@@ -89,11 +89,11 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
   /* 2. Config pin muxing */
     __HAL_RCC_GPIOA_CLK_ENABLE();
     GPIO_InitTypeDef Uart2Config;
-    Uart2Config.Pin = GPIO_PIN_2 | GPIO_PIN_3; // PA2, PA3
-    Uart2Config.Mode = GPIO_MODE_AF_PP; // Alternate function push-pull
-    Uart2Config.Alternate = GPIO_AF7_USART2; // AF7 for USART2
-    Uart2Config.Pull = GPIO_PULLUP; // No pull-up or pull-down
-    Uart2Config.Speed = GPIO_SPEED_FREQ_LOW; // Very high speed
+    Uart2Config.Pin = GPIO_PIN_2 | GPIO_PIN_3;    // PA2, PA3
+    Uart2Config.Mode = GPIO_MODE_AF_PP;           // Alternate function push-pull
+    Uart2Config.Alternate = GPIO_AF7_USART2;      // AF7 for USART2
+    Uart2Config.Pull = GPIO_PULLUP;               // No pull-up or pull-down
+    Uart2Config.Speed = GPIO_SPEED_FREQ_LOW;      // Very high speed
 
     HAL_GPIO_Init(GPIOA, &Uart2Config);
 

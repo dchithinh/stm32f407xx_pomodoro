@@ -21,7 +21,9 @@
         "lv_indev.h": "c",
         "lv_display.h": "c",
         "lv_log.h": "c",
-        "lv_conf_internal.h": "c"
+        "lv_conf_internal.h": "c",
+        "main_screen.h": "c",
+        "clock_config.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
