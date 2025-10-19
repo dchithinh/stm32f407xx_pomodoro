@@ -42,7 +42,7 @@ extern DMA_HandleTypeDef lcd_dma_handle;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+volatile uint32_t dma_irq_counter = 0;  // Debug: count DMA interrupts
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -207,7 +207,7 @@ void SysTick_Handler(void)
 void DMA1_Stream4_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
-
+  dma_irq_counter++;  // Debug: count every interrupt
   /* USER CODE END DMA1_Stream4_IRQn 0 */
   HAL_DMA_IRQHandler(&lcd_dma_handle);
   /* USER CODE BEGIN DMA1_Stream4_IRQn 1 */

@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include "lvgl.h"
 #include "lcd.h"
+#include "config.h"  // For USE_DMA_FLUSH_LCD
 
 /*********************
  *      DEFINES
@@ -30,6 +31,10 @@
  * GLOBAL PROTOTYPES
  **********************/
 void tft_init(void);
+
+#if USE_DMA_FLUSH_LCD
+void tft_dma_transfer_complete(void);
+#endif
 
 /**********************
  *      MACROS

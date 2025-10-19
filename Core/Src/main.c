@@ -16,6 +16,7 @@
   ******************************************************************************
   */
 #include <string.h>
+#include <stdio.h>
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_uart.h"
@@ -73,12 +74,88 @@ int main(void)
   tft_init();
   touchpad_init();
 
+  /* Enable DWT cycle counter for CPU measurement */
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // Enable trace
+  DWT->CYCCNT = 0;                                  // Reset counter
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;             // Enable counter
+
   ui_main_screen(lv_scr_act());
+  
+  /* CPU usage monitoring variables */
+  extern volatile uint32_t dma_irq_counter;
+  uint32_t last_irq_count = 0;
+  uint32_t last_report_time = HAL_GetTick();
+  
+  /* For CPU measurement - use recent average instead of long accumulation */
+  uint32_t recent_active = 0;
+  uint32_t recent_idle = 0;
+  uint32_t measurement_count = 0;
   
   while (1)
   {
+    uint32_t cycle_start = DWT->CYCCNT;
+    
 	  lv_timer_handler();
+    
+    uint32_t cycle_end = DWT->CYCCNT;
+    uint32_t active_cycles = cycle_end - cycle_start;
+    
+    /* Measure idle time - reduce delay to call LVGL more frequently */
+    uint32_t idle_start = DWT->CYCCNT;
     HAL_Delay(5);
+    uint32_t idle_end = DWT->CYCCNT;
+    uint32_t idle_cycles = idle_end - idle_start;
+    
+    /* Accumulate for averaging (prevent overflow by limiting samples) */
+    if(measurement_count < 100) {
+      recent_active += active_cycles;
+      recent_idle += idle_cycles;
+      measurement_count++;
+    }
+    
+    /* Report DMA and CPU statistics every 10 seconds */
+    uint32_t now = HAL_GetTick();
+    if(now - last_report_time >= 10000) {
+      uint32_t irq_delta = dma_irq_counter - last_irq_count;
+      
+      /* Calculate actual CPU usage based on recent measurements */
+      uint32_t cpu_percent = 0;
+      uint32_t avg_active = 0;
+      uint32_t avg_idle = 0;
+      
+      if(measurement_count > 0) {
+        avg_active = recent_active / measurement_count;
+        avg_idle = recent_idle / measurement_count;
+        uint32_t avg_total = avg_active + avg_idle;
+        
+        if(avg_total > 0) {
+          cpu_percent = (avg_active * 100) / avg_total;
+        }
+      }
+      
+      /* Convert cycles to microseconds (84 MHz = 84 cycles/us) */
+      uint32_t active_us = avg_active / 84;
+      uint32_t idle_us = avg_idle / 84;
+      uint32_t total_us = active_us + idle_us;
+      
+      LV_LOG_USER("=== Performance Report ===");
+      LV_LOG_USER("DMA IRQs: %lu total, %lu in 10s (%lu/sec)", 
+                  (unsigned long)dma_irq_counter,
+                  (unsigned long)irq_delta,
+                  (unsigned long)(irq_delta / 10));
+      LV_LOG_USER("CPU Usage: %lu%% (active=%luus, idle=%luus, total=%luus)", 
+                  (unsigned long)cpu_percent,
+                  (unsigned long)active_us,
+                  (unsigned long)idle_us,
+                  (unsigned long)total_us);
+      LV_LOG_USER("Expected loop time: ~5ms, actual: %luus", (unsigned long)total_us);
+      
+      last_irq_count = dma_irq_counter;
+      last_report_time = now;
+      recent_active = 0;
+      recent_idle = 0;
+      measurement_count = 0;
+    }
   }
 
 }

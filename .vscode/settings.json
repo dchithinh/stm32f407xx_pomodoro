@@ -23,7 +23,8 @@
         "lv_log.h": "c",
         "lv_conf_internal.h": "c",
         "main_screen.h": "c",
-        "clock_config.h": "c"
+        "clock_config.h": "c",
+        "xmemory": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

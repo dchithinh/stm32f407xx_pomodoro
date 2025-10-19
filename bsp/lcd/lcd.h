@@ -47,7 +47,7 @@ void ili9341_test_draw_color_bars(void);
 
 void lcd_set_display_area(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2);
 void lcd_send_cmd_mem_write(void);
-void lcd_write(uint8_t *buffer, uint32_t length);
+void lcd_write_pixels(uint8_t *buffer, uint32_t length);
 void *lcd_get_draw_buffer1_addr(void);
 void *lcd_get_draw_buffer2_addr(void);
 

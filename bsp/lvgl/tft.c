@@ -12,6 +12,7 @@
 
 #include "tft.h"
 #include "stm32f4xx.h"
+#include "config.h"  // For USE_DMA_FLUSH_LCD
 
 
 extern  lcd_handle_t lcd_handle;
@@ -41,6 +42,7 @@ static void tft_flush(lv_display_t * drv, const lv_area_t * area, uint8_t * colo
 
 
 static lv_display_t *display;
+static volatile lv_display_t *disp_drv_pending = NULL;  // Track pending DMA flush
 
 /**********************
  *      MACROS
@@ -78,7 +80,9 @@ void tft_init(void)
     display = lv_display_create(TFT_HOR_RES, TFT_VER_RES);
 
     // buf_size is number of pixels
-    uint32_t buf_size = (10UL * 1024UL) / 2;  // 2 bytes per pixel in RGB565
+    // 20KB buffers = 10,240 pixels = ~42 lines (vs 21 lines with 10KB)
+    // This is a compromise between performance and RAM usage
+    uint32_t buf_size = (20UL * 1024UL) / 2;  // 2 bytes per pixel in RGB565
 
     lv_display_set_buffers(display, draw_buf1, draw_buf2, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
@@ -130,9 +134,30 @@ static void tft_flush(lv_display_t * disp, const lv_area_t * area, uint8_t * col
     uint32_t height = (area->y2 - area->y1 + 1);
     uint32_t total_bytes = width * height * 2;  // RGB565
 
-    /* Write all pixels at once */
-    lcd_write(color_p, total_bytes);
+    /* Write all pixels at once (DMA or blocking depending on config) */
+    lcd_write_pixels(color_p, total_bytes);
 
+#if USE_DMA_FLUSH_LCD
+    /* In DMA mode, save display pointer and signal completion in DMA callback */
+    disp_drv_pending = disp;
+    /* lv_disp_flush_ready() will be called from tft_dma_transfer_complete() */
+#else
+    /* In blocking mode, transfer is already complete */
     lv_disp_flush_ready(disp);
+#endif
 }
+
+#if USE_DMA_FLUSH_LCD
+/**
+ * Called from HAL_SPI_TxCpltCallback when DMA transfer completes
+ * This function should be called from lcd.c DMA completion callback
+ */
+void tft_dma_transfer_complete(void)
+{
+    if (disp_drv_pending != NULL) {
+        lv_disp_flush_ready((lv_display_t *)disp_drv_pending);
+        disp_drv_pending = NULL;
+    }
+}
+#endif
 
