@@ -92,9 +92,9 @@ lcd_handle_t *hlcd = &lcd_handle;
 #define LCD_DCX_HIGH()  HAL_GPIO_WritePin(LCD_DCX_PORT, LCD_DCX_PIN, GPIO_PIN_SET)
 
 
-// Optimized buffer size: 20KB each (10,240 pixels = ~42 lines)
-// Balance between performance and RAM usage (32KB was too large, caused linker overflow)
-#define DB_SIZE 	(20UL * 1024UL)
+// Increased buffer to 24KB each (12,288 pixels = ~51 lines)
+// Trade-off: Reduced LV_MEM_SIZE from 48KB → 40KB to free 8KB RAM
+#define DB_SIZE 	(24UL * 1024UL)
 uint8_t db[DB_SIZE];
 uint8_t wb[DB_SIZE];
 

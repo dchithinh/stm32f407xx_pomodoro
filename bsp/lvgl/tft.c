@@ -80,9 +80,9 @@ void tft_init(void)
     display = lv_display_create(TFT_HOR_RES, TFT_VER_RES);
 
     // buf_size is number of pixels
-    // 20KB buffers = 10,240 pixels = ~42 lines (vs 21 lines with 10KB)
-    // This is a compromise between performance and RAM usage
-    uint32_t buf_size = (20UL * 1024UL) / 2;  // 2 bytes per pixel in RGB565
+    // 24KB buffers = 12,288 pixels = ~51 lines (vs 42 lines with 20KB)
+    // Trade-off: Reduced LV_MEM_SIZE from 48KB → 40KB for better rendering performance
+    uint32_t buf_size = (24UL * 1024UL) / 2;  // 2 bytes per pixel in RGB565
 
     lv_display_set_buffers(display, draw_buf1, draw_buf2, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
