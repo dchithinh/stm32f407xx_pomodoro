@@ -297,7 +297,7 @@ Debug features can be enabled/disabled in `debug_utils.h`:
 
 1. **SPI Read Operations:** Unable to read LCD ID/status registers reliably
 2. **16-bit HAL SPI:** Issues with 16-bit transfers using HAL API
-3. **Touch Input Lag:** On first touch at a new position, the system may respond to the previous touch location. A second touch is required to register the correct position.
+3. **Touch at a new spot after lifting:** If touch still feels laggy, lower `XPT2046_AVG` in `bsp/lvgl/lv_drv_conf.h` (e.g. from 4 to 2).
 4. **System Stability at 168MHz:** When using 168MHz system clock configuration, the system occasionally hangs or generates hard faults. Consider using 84MHz configuration for more stable operation.
 
 ---

@@ -26,5 +26,6 @@
         "clock_config.h": "c",
         "xmemory": "c"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.intelliSenseEngine": "default"
 }

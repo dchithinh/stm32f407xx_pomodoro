@@ -28,6 +28,7 @@
  **********************/
 static void xpt2046_corr(int16_t * x, int16_t * y);
 static void xpt2046_avg(int16_t * x, int16_t * y);
+static void xpt2046_avg_reset(void);
 static void xpt2046_gpio_init(void);
 static void MX_SPI3_Init(void);
 
@@ -147,6 +148,16 @@ void xpt2046_read(lv_indev_t * indev, lv_indev_data_t * data)
 
 	bool pressed = (LV_DRV_INDEV_IRQ_READ == 0);
 
+	/* Drop averaged samples from the previous touch so a new tap is not pulled toward the old point. */
+	if (!pressed) {
+		if (last_pressed) {
+			xpt2046_avg_reset();
+		}
+	}
+	else if (!last_pressed) {
+		xpt2046_avg_reset();
+	}
+
 	if (pressed) {
 		LV_DRV_INDEV_SPI_CS(0);
 
@@ -179,11 +190,8 @@ void xpt2046_read(lv_indev_t * indev, lv_indev_data_t * data)
 
 	if (pressed && !last_pressed)
 		LV_LOG_USER("[TOUCH] PRESSED (%d,%d)", last_x, last_y);
-	else if (!pressed && last_pressed) {
-		data->point.x = -1;
-		data->point.y = -1;
+	else if (!pressed && last_pressed)
 		LV_LOG_USER("[TOUCH] RELEASED (%d,%d)", last_x, last_y);
-	}
 
 	last_pressed = pressed;
 }
@@ -223,6 +231,11 @@ static void xpt2046_corr(int16_t * x, int16_t * y)
 #if XPT2046_Y_INV != 0
 	(*y) = XPT2046_VER_RES - (*y);
 #endif
+}
+
+static void xpt2046_avg_reset(void)
+{
+	avg_last = 0;
 }
 
 static void xpt2046_avg(int16_t * x, int16_t * y)
