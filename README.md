@@ -1,9 +1,17 @@
 # 🍅 STM32F407 Pomodoro Timer with ILI9341 LCD
 
-A **Pomodoro Timer** application built for the **STM32F407** microcontroller with a **2.4" ILI9341 TFT LCD** display and **LVGL** graphics library. This project demonstrates embedded GUI development, SPI communication, and real-time timer functionality.
+A **Pomodoro Timer** application built for the **STM32F407** microcontroller with a **2.4" ILI9341 TFT LCD** display and **LVGL** graphics library. Firmware targets the **[stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat)** — a plug-on HAT for the STM32F407 Discovery (2.4" ILI9341 + XPT2046 touch). Schematic, PCB, and pin tables live in the [pcb-lab](https://github.com/dchithinh/pcb-lab) repo.
 
 <div align="center">
-  <img src="https://github.com/dchithinh/stm32f407xx_pomodoro/blob/master/Doc/pomo_demo.png" alt="Project Demo" width="400">
+
+**Live UI on the 2.4" ILI9341 (RGB565)**
+
+<img src="Doc/RGB.jpg" alt="Pomodoro app running on the LCD" width="400">
+
+**STM32F407 Discovery + [stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat)**
+
+<img src="Doc/stm32f47_LCD_HAT.jpg" alt="STM32F407 Discovery board with 2.4 inch LCD HAT assembled" width="520">
+
 </div>
 
 ---
@@ -12,11 +20,11 @@ A **Pomodoro Timer** application built for the **STM32F407** microcontroller wit
 
 - [🍅 STM32F407 Pomodoro Timer with ILI9341 LCD](#-stm32f407-pomodoro-timer-with-ili9341-lcd)
   - [📋 Table of Contents](#-table-of-contents)
-  - [✨ Features](#-features)
   - [🎯 Project Overview](#-project-overview)
   - [🖥️ Try Before You Build - Windows Simulator](#️-try-before-you-build---windows-simulator)
   - [🛠️ Hardware Requirements](#️-hardware-requirements)
   - [🔌 Hardware Connections](#-hardware-connections)
+    - [HAT board (hardware reference)](#hat-board-hardware-reference)
     - [LCD Display Connections (SPI2)](#lcd-display-connections-spi2)
     - [Touch controller (XPT2046, SPI3, HAT)](#touch-controller-xpt2046-spi3-hat)
     - [Debug UART (USART2)](#debug-uart-usart2)
@@ -24,12 +32,9 @@ A **Pomodoro Timer** application built for the **STM32F407** microcontroller wit
   - [🚀 Getting Started](#-getting-started)
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
-    - [Building the Project](#building-the-project)
-    - [Flashing to MCU](#flashing-to-mcu)
-  - [📖 Usage](#-usage)
-    - [Debug Output](#debug-output)
+    - [Building \& Flashing the Project](#building--flashing-the-project)
   - [🏗️ Project Structure](#️-project-structure)
-  - [🔧 Configuration](#-configuration)
+  - [🔧 Developing Configuration](#-developing-configuration)
     - [Clock Configuration](#clock-configuration)
     - [Display Configuration](#display-configuration)
     - [Debug Configuration](#debug-configuration)
@@ -38,24 +43,9 @@ A **Pomodoro Timer** application built for the **STM32F407** microcontroller wit
     - [LVGL Integration](#lvgl-integration)
     - [Known Issues](#known-issues)
   - [🤝 Contributing](#-contributing)
-    - [💡 Fun Fact](#-fun-fact)
     - [Contribution Guidelines](#contribution-guidelines)
   - [🙏 Acknowledgments](#-acknowledgments)
   - [📬 Contact](#-contact)
-
----
-
-## ✨ Features
-
-- 🍅 **Full Pomodoro Timer** functionality (25min work, 5min break cycles (Configurable) )
-- 📱 **Touch-enabled GUI** with LVGL graphics library
-- 🖥️ **2.4" ILI9341 LCD** display (240x320 resolution)
-- 🔧 **Modular code structure** with separated concerns
-- 🐛 **UART debugging** support with formatted logging
-- ⚡ **Multiple clock configurations** (16MHz HSI, 84MHz, 168MHz)
-- 🎨 **Beautiful UI** with progress indicators and animations
-- 🔄 **Touch cursor debugging** for input validation
-- 📊 **Statistics tracking** for completed sessions
 
 ---
 
@@ -96,14 +86,25 @@ The simulator uses the same LVGL code base, providing an authentic preview of wh
 |-----------|--------------|--------|
 | **Microcontroller** | STM32F407VGT6 | ARM Cortex-M4, 168MHz |
 | **Display** | 2.4" ILI9341 LCD | 240x320, SPI interface |
-| **Touch Controller** | XPT2046 | SPI touch controller |
-| **Development Board** | STM32F407 Discovery | With **stm32f407_tft_2.4inch_hat** (2.4" ILI9341 + XPT2046) |
+| **Touch Controller** | XPT2046 | On-module, SPI3 via HAT |
+| **Display HAT** | [stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat) | KiCad HAT: ILI9341 2.4", touch, optional microSD / I2C headers |
+| **MCU board** | STM32F407 Discovery | Stack the HAT on Discovery **P1 / P2** |
 | **Power Supply** | 5V | For LCD backlight |
 | **Debugger** | ST-Link/V2 | For programming and debugging |
 
 ---
 
 ## 🔌 Hardware Connections
+
+Pin assignments below match the HAT README in **[pcb-lab → stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat)**. Use that repo for schematic, connector pads, and future PCB revisions.
+
+### HAT board (hardware reference)
+
+| Resource | Link |
+|----------|------|
+| **HAT project (KiCad, pin map, photos)** | [github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat) |
+| **Assembled setup (this repo)** | `Doc/stm32f47_LCD_HAT.jpg` |
+| **LCD UI demo (this repo)** | `Doc/RGB.jpg` |
 
 ### LCD Display Connections (SPI2)
 | LCD Pin | STM32F407 Pin | Function | Notes |
@@ -118,11 +119,9 @@ The simulator uses the same LVGL code base, providing an authentic preview of wh
 | **SCK** | PB13 | SPI Clock | SPI2 clock |
 | **LED** | 5V | Backlight | Always on |
 
-Pin mapping matches the **stm32f407_tft_2.4inch_hat** schematic (`LCD_*` nets on SPI2). Discovery **P2** pads: SCK **38** (PB13), MOSI **40** (PB15), MISO **9** (PC2), RESET **41** (PD10), DC **42** (PD9); **P1** pad **19** (PB9) = `LCD_CS`.
+See the [HAT signal table](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat) for the full map.
 
 ### Touch controller (XPT2046, SPI3, HAT)
-
-Resistive touch uses **SPI3** on the same bus as the optional microSD slot (`LCD_SD_*` nets on the HAT). Chip select and IRQ are separate GPIOs. Firmware defines these pins in `bsp/lcd/hw_def.h`.
 
 | Touch signal | Module pin | STM32F407 | SPI / GPIO | HAT net | Discovery (P1) pad |
 |--------------|------------|-----------|------------|---------|---------------------|
@@ -150,7 +149,7 @@ Touch calibration (min/max, invert) is in `bsp/lvgl/lv_drv_conf.h` (`XPT2046_*`)
 - **STM32CubeMX** (for configuration)
 - **STM32 HAL Library** (included)
 - **LVGL v9.4.0** (included as submodule)
-- **Git** (for cloning repository)
+- **Git** 
 
 ---
 
@@ -158,7 +157,7 @@ Touch calibration (min/max, invert) is in `bsp/lvgl/lv_drv_conf.h` (`XPT2046_*`)
 
 ### Prerequisites
 
-1. Install **STM32CubeIDE** from [STMicroelectronics website](https://www.st.com/en/development-tools/stm32cubeide.html)
+1. Install **STM32CubeIDE**
 2. Install **Git** for version control
 3. Have your **STM32F407** board and **ILI9341 LCD** ready
 
@@ -175,44 +174,8 @@ Touch calibration (min/max, invert) is in `bsp/lvgl/lv_drv_conf.h` (`XPT2046_*`)
    git submodule update --init --recursive
    ```
 
-3. **Open in STM32CubeIDE:**
-   - File → Import → Existing Projects into Workspace
-   - Select the project folder
-
-### Building the Project
-
-1. **Configure build:**
-   - Right-click project → Properties → C/C++ Build
-   - Select your preferred configuration (Debug/Release)
-
-2. **Build the project:**
-   - Press `Ctrl+B` or use Project → Build Project
-
-### Flashing to MCU
-
-1. **Connect ST-Link debugger** to your STM32F407 board
-2. **Flash the firmware:**
-   - Right-click project → Run As → STM32 C/C++ Application
-   - Or use the debug configuration for development
-
----
-
-## 📖 Usage
-
-1. **Power on** the system
-2. **Touch the screen** to interact with the Pomodoro timer
-3. **Start a session** by tapping the start button
-4. **Monitor progress** through the circular progress indicator
-5. **Take breaks** when prompted between work sessions
-6. **View statistics** to track your productivity
-
-### Debug Output
-
-Connect a **USB-to-TTL adapter** to UART2 pins (PA2/PA3) to see debug output:
-- **Baud rate:** 115200
-- **Data bits:** 8
-- **Stop bits:** 1
-- **Parity:** None
+### Building & Flashing the Project
+   Enjoy !!!!
 
 ---
 
@@ -234,24 +197,19 @@ stm32f407xx_pomodoro/
 │   └── 📁 lvgl/         # LVGL port
 ├── 📁 lvgl/             # LVGL library (submodule)
 ├── 📁 Drivers/          # STM32 HAL drivers
-├── 📁 Doc/              # Documentation and images
+├── 📁 Doc/              # Datasheets, reference manuals, photos
+│   ├── RGB.jpg          # Pomodoro UI on LCD (demo screenshot)
+│   └── stm32f47_LCD_HAT.jpg  # Discovery + 2.4" HAT (assembled hardware)
 └── 📄 README.md         # This file
 ```
 
 ---
 
-## 🔧 Configuration
+## 🔧 Developing Configuration
 
 ### Clock Configuration
 
 The project supports multiple clock configurations in `clock_config.h`:
-
-```c
-// Uncomment one of the following:
-// #define USE_HSI_16MHZ    1    // 16MHz HSI
-// #define USE_HSI_84MHZ    1    // 84MHz PLL
-// Default: 168MHz HSE PLL
-```
 
 ### Display Configuration
 
@@ -261,6 +219,12 @@ Display settings are configured in `bsp/lcd/config.h`:
 - **Orientation:** Portrait/Landscape
 
 ### Debug Configuration
+
+Connect a **USB-to-TTL adapter** to UART2 pins (PA2/PA3) to see debug output:
+- **Baud rate:** 115200
+- **Data bits:** 8
+- **Stop bits:** 1
+- **Parity:** None
 
 Debug features can be enabled/disabled in `debug_utils.h`:
 - **UART logging:** Enable/disable debug output
@@ -297,16 +261,10 @@ Debug features can be enabled/disabled in `debug_utils.h`:
 
 1. **SPI Read Operations:** Unable to read LCD ID/status registers reliably
 2. **16-bit HAL SPI:** Issues with 16-bit transfers using HAL API
-3. **Touch at a new spot after lifting:** If touch still feels laggy, lower `XPT2046_AVG` in `bsp/lvgl/lv_drv_conf.h` (e.g. from 4 to 2).
-4. **System Stability at 168MHz:** When using 168MHz system clock configuration, the system occasionally hangs or generates hard faults. Consider using 84MHz configuration for more stable operation.
 
 ---
 
 ## 🤝 Contributing
-
-### 💡 Fun Fact
-
-I'm an **embedded developer, not a UI/UX designer** - so the UI in this app may not be that great! 😅 Feel free to improve the user interface and make it more beautiful. The original purpose of this project was to learn **LVGL**, **STM32 HAL**, and **SPI communication** - and I'm always excited to see how the community can enhance it further!
 
 ---
 
@@ -332,6 +290,7 @@ Contributions are welcome! Please follow these steps:
 - **[niekiran/EmbeddedGraphicsLVGL-MCU3](https://github.com/niekiran/EmbeddedGraphicsLVGL-MCU3)** - Original inspiration
 - **[LVGL Team](https://lvgl.io/)** - Amazing graphics library
 - **[STMicroelectronics](https://www.st.com/)** - STM32 ecosystem and HAL library
+- **[stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat)** ([pcb-lab](https://github.com/dchithinh/pcb-lab)) — Discovery TFT HAT hardware this firmware is built for
 - **[MicroPomo](https://github.com/dchithinh/MicroPomo)** - Windows simulator for testing the Pomodoro app
 - **Embedded systems community** - For knowledge sharing and support
 
@@ -345,7 +304,4 @@ Contributions are welcome! Please follow these steps:
 ---
 
 ⭐ **Star this repository** if you found it helpful!
-
-
-
 
