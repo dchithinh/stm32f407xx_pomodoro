@@ -25,5 +25,19 @@
 #define LCD_DCX_PORT		GPIOD
 #define LCD_DCX_PIN			GPIO_PIN_9
 
+/* XPT2046 on stm32f407_tft_2.4inch_hat (SPI3, shared with microSD) */
+#define XPT2046_SPI         SPI3
+
+#define XPT2046_SCK_PORT    GPIOC
+#define XPT2046_SCK_PIN     GPIO_PIN_10
+#define XPT2046_MISO_PORT   GPIOC
+#define XPT2046_MISO_PIN    GPIO_PIN_11
+#define XPT2046_MOSI_PORT   GPIOC
+#define XPT2046_MOSI_PIN    GPIO_PIN_12
+
+#define XPT2046_CS_PORT     GPIOE
+#define XPT2046_CS_PIN      GPIO_PIN_3
+#define XPT2046_IRQ_PORT    GPIOE
+#define XPT2046_IRQ_PIN     GPIO_PIN_5
 
 #endif /* __HW_DEF_H__ */

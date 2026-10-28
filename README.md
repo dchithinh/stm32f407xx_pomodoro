@@ -18,7 +18,7 @@ A **Pomodoro Timer** application built for the **STM32F407** microcontroller wit
   - [🛠️ Hardware Requirements](#️-hardware-requirements)
   - [🔌 Hardware Connections](#-hardware-connections)
     - [LCD Display Connections (SPI2)](#lcd-display-connections-spi2)
-    - [Touch Controller Connections (SPI1)](#touch-controller-connections-spi1)
+    - [Touch controller (XPT2046, SPI3, HAT)](#touch-controller-xpt2046-spi3-hat)
     - [Debug UART (USART2)](#debug-uart-usart2)
   - [⚙️ Software Requirements](#️-software-requirements)
   - [🚀 Getting Started](#-getting-started)
@@ -97,7 +97,7 @@ The simulator uses the same LVGL code base, providing an authentic preview of wh
 | **Microcontroller** | STM32F407VGT6 | ARM Cortex-M4, 168MHz |
 | **Display** | 2.4" ILI9341 LCD | 240x320, SPI interface |
 | **Touch Controller** | XPT2046 | SPI touch controller |
-| **Development Board** | STM32F4 Discovery | Or compatible STM32F407 board |
+| **Development Board** | STM32F407 Discovery | With **stm32f407_tft_2.4inch_hat** (2.4" ILI9341 + XPT2046) |
 | **Power Supply** | 5V | For LCD backlight |
 | **Debugger** | ST-Link/V2 | For programming and debugging |
 
@@ -118,14 +118,23 @@ The simulator uses the same LVGL code base, providing an authentic preview of wh
 | **SCK** | PB13 | SPI Clock | SPI2 clock |
 | **LED** | 5V | Backlight | Always on |
 
-### Touch Controller Connections (SPI1)
-| Touch Pin | STM32F407 Pin | Function | Notes |
-|-----------|---------------|----------|-------|
-| **T_CLK** | PA5 | Touch SPI Clock | SPI1_SCK |
-| **T_CS** | PA15 | Touch Chip Select | Manual GPIO control |
-| **T_DIN** | PA7 | Touch Data In | SPI1_MOSI |
-| **T_DO** | PA6 | Touch Data Out | SPI1_MISO |
-| **T_IRQ** | PA8 | Touch Interrupt | GPIO input |
+Pin mapping matches the **stm32f407_tft_2.4inch_hat** schematic (`LCD_*` nets on SPI2). Discovery **P2** pads: SCK **38** (PB13), MOSI **40** (PB15), MISO **9** (PC2), RESET **41** (PD10), DC **42** (PD9); **P1** pad **19** (PB9) = `LCD_CS`.
+
+### Touch controller (XPT2046, SPI3, HAT)
+
+Resistive touch uses **SPI3** on the same bus as the optional microSD slot (`LCD_SD_*` nets on the HAT). Chip select and IRQ are separate GPIOs. Firmware defines these pins in `bsp/lcd/hw_def.h`.
+
+| Touch signal | Module pin | STM32F407 | SPI / GPIO | HAT net | Discovery (P1) pad |
+|--------------|------------|-----------|------------|---------|---------------------|
+| **T_CLK** | T_CLK | **PC10** | SPI3_SCK | `LCD_SD_CLK` | 38 |
+| **T_DO** | T_MISO | **PC11** | SPI3_MISO | `LCD_SD_MISO` | 37 |
+| **T_DIN** | T_MOSI | **PC12** | SPI3_MOSI | `LCD_SD_MOSI` | 36 |
+| **T_CS** | T_CS | **PE3** | GPIO (CS, active low) | `LCD_T_CS` | 15 |
+| **T_IRQ** | T_IRQ | **PE5** | GPIO input (active low, pull-up) | `LCD_T_IRQ` | 12 |
+
+**Not used for touch on this HAT:** Discovery SPI1 (PA5 / PA6 / PA7), PA8, or PA15 as in older wiring notes.
+
+Touch calibration (min/max, invert) is in `bsp/lvgl/lv_drv_conf.h` (`XPT2046_*`).
 
 ### Debug UART (USART2)
 | UART Pin | STM32F407 Pin | Function | Notes |
@@ -263,12 +272,19 @@ Debug features can be enabled/disabled in `debug_utils.h`:
 
 ### SPI Communication
 
-The project uses **SPI2** for LCD communication with the following settings:
+**LCD (SPI2)** — settings in `bsp/lcd/lcd.c`:
+
 - **Mode:** Full-duplex master
 - **Clock polarity:** Low (CPOL=0)
 - **Clock phase:** 1st edge (CPHA=0)
 - **Data size:** 8-bit
 - **MSB first**
+
+**Touch (SPI3, XPT2046)** — settings in `bsp/lcd/tsc/XPT2046.c`:
+
+- **Pins:** PC10 / PC11 / PC12 (AF6), CS **PE3**, IRQ **PE5** (see `bsp/lcd/hw_def.h`)
+- **Mode:** Master, CPOL=0, CPHA=0, 8-bit, software CS on PE3
+- **Shared bus:** Same SPI3 lines as the HAT microSD socket; only touch CS (`LCD_T_CS`) is driven for the Pomodoro UI
 
 ### LVGL Integration
 
