@@ -48,7 +48,7 @@
 #include "stm32f4xx.h"
 
 #if !defined  (HSE_VALUE) 
-  #define HSE_VALUE    ((uint32_t)25000000) /*!< Default value of the External oscillator in Hz */
+  #define HSE_VALUE    ((uint32_t)8000000) /*!< Discovery HSE 8 MHz */
 #endif /* HSE_VALUE */
 
 #if !defined  (HSI_VALUE)
@@ -91,23 +91,16 @@
 /*!< Uncomment the following line if you need to relocate the vector table
      anywhere in Flash or Sram, else the vector table is kept at the automatic
      remap of boot address selected */
-/* #define USER_VECT_TAB_ADDRESS */
+#define USER_VECT_TAB_ADDRESS
 
 #if defined(USER_VECT_TAB_ADDRESS)
-/*!< Uncomment the following line if you need to relocate your vector Table
-     in Sram else user remap will be done in Flash. */
 /* #define VECT_TAB_SRAM */
 #if defined(VECT_TAB_SRAM)
-#define VECT_TAB_BASE_ADDRESS   SRAM_BASE       /*!< Vector Table base address field.
-                                                     This value must be a multiple of 0x200. */
+#define VECT_TAB_BASE_ADDRESS   SRAM_BASE
 #else
-#define VECT_TAB_BASE_ADDRESS   FLASH_BASE      /*!< Vector Table base address field.
-                                                     This value must be a multiple of 0x200. */
+#define VECT_TAB_BASE_ADDRESS   FLASH_BASE
 #endif /* VECT_TAB_SRAM */
-#if !defined(VECT_TAB_OFFSET)
-#define VECT_TAB_OFFSET         0x00000000U     /*!< Vector Table offset field.
-                                                     This value must be a multiple of 0x200. */
-#endif /* VECT_TAB_OFFSET */
+#define VECT_TAB_OFFSET         0x00020000U     /* App slot: 0x08020000 (128 KiB bootloader) */
 #endif /* USER_VECT_TAB_ADDRESS */
 /******************************************************************************/
 
@@ -177,7 +170,7 @@ void SystemInit(void)
 
   /* Configure the Vector Table location -------------------------------------*/
 #if defined(USER_VECT_TAB_ADDRESS)
-  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET;
 #endif /* USER_VECT_TAB_ADDRESS */
 }
 

@@ -150,7 +150,12 @@ static HAL_StatusTypeDef Configure_HSE_168MHz(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  return HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
+  HAL_StatusTypeDef status = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
+  if (status == HAL_OK)
+  {
+    SystemCoreClockUpdate();
+  }
+  return status;
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -163,15 +168,24 @@ void SystemClock_Config(void)
 {
   HAL_StatusTypeDef status = HAL_ERROR;
 
+  /* Bootloader may run at 168 MHz; app always re-clocks to its own profile here. */
+  HAL_RCC_DeInit();
+
 #if (USE_HSI_16MHZ == 1)
   status = Configure_HSI_16MHz();
-#elif (USE_HSI_84MHZ == 1)
+#elif defined(USE_HSI_84MHZ) && (USE_HSI_84MHZ == 1)
   status = Configure_HSE_84MHz();
 #else
   status = Configure_HSE_168MHz();
 #endif
 
   if (status != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  SystemCoreClockUpdate();
+  if (HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK)
   {
     Error_Handler();
   }

@@ -85,9 +85,17 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  GPIO_InitTypeDef g = { .Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15,
+                         .Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_NOPULL,
+                         .Speed = GPIO_SPEED_FREQ_LOW };
+  HAL_GPIO_Init(GPIOD, &g);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); /* LD4 */
+    for (volatile uint32_t d = 0; d < 500000U; d++) {
+    }
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
     /* USER CODE END W1_HardFault_IRQn 0 */
   }

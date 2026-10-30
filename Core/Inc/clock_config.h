@@ -27,10 +27,10 @@ extern "C" {
 #include "stm32f4xx_hal.h"
 
 /* Clock configuration options -----------------------------------------------*/
-/* Uncomment one of the following options to select clock configuration */
+/* Pomodoro + ILI9341 SPI2 are tuned for 84 MHz SYSCLK (APB1 = 42 MHz). */
 // #define USE_HSI_16MHZ    1
 #define USE_HSI_84MHZ    1
-/* Default: 168MHz HSE configuration */
+/* Leave both commented only if experimenting with 168 MHz (not recommended for this app). */
 
 /* Exported functions prototypes ---------------------------------------------*/
 void SystemClock_Config(void);

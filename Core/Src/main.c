@@ -43,6 +43,10 @@ UART_HandleTypeDef huart2;
   */
 static void UART2_Init(void)
 {
+    __HAL_RCC_USART2_CLK_ENABLE();
+    __HAL_RCC_USART2_FORCE_RESET();
+    __HAL_RCC_USART2_RELEASE_RESET();
+
     huart2.Instance = USART2;
     huart2.Init.BaudRate = 115200;      // 115200 bps for debug output
     huart2.Init.WordLength = UART_WORDLENGTH_8B;  // 8 data bits
@@ -56,6 +60,13 @@ static void UART2_Init(void)
     }
 }
 
+int __io_putchar(int ch)
+{
+    uint8_t c = (uint8_t)ch;
+    HAL_UART_Transmit(&huart2, &c, 1, HAL_MAX_DELAY);
+    return ch;
+}
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -65,14 +76,21 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* Configure the system clock */
+  /* Bootloader jumps with PRIMASK=1; cold reset does not. DMA LCD flush needs IRQs. */
+  __enable_irq();
+
   SystemClock_Config();
 
   UART2_Init();
+  printf("\r\n[Pomodoro] app slot 0x08020000, SYSCLK=%lu Hz\r\n",
+         (unsigned long)HAL_RCC_GetSysClockFreq());
+
   lv_init();
-  lv_port_log_init();
+  printf("[Pomodoro] lv_init OK\r\n");
   tft_init();
+  printf("[Pomodoro] tft_init OK\r\n");
   touchpad_init();
+  lv_port_log_init();
 
   /* Enable DWT cycle counter for CPU measurement */
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // Enable trace
@@ -96,7 +114,7 @@ int main(void)
     uint32_t cycle_start = DWT->CYCCNT;
     
 	  lv_timer_handler();
-    
+
     uint32_t cycle_end = DWT->CYCCNT;
     uint32_t active_cycles = cycle_end - cycle_start;
     
@@ -133,9 +151,13 @@ int main(void)
         }
       }
       
-      /* Convert cycles to microseconds (84 MHz = 84 cycles/us) */
-      uint32_t active_us = avg_active / 84;
-      uint32_t idle_us = avg_idle / 84;
+      /* DWT cycles per us = SYSCLK in MHz */
+      uint32_t cycles_per_us = HAL_RCC_GetSysClockFreq() / 1000000U;
+      if (cycles_per_us == 0U) {
+        cycles_per_us = 1U;
+      }
+      uint32_t active_us = avg_active / cycles_per_us;
+      uint32_t idle_us = avg_idle / cycles_per_us;
       uint32_t total_us = active_us + idle_us;
       
       LV_LOG_USER("=== Performance Report ===");
@@ -167,10 +189,17 @@ int main(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  GPIO_InitTypeDef g = { .Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15,
+                         .Mode = GPIO_MODE_OUTPUT_PP, .Pull = GPIO_NOPULL,
+                         .Speed = GPIO_SPEED_FREQ_LOW };
+  HAL_GPIO_Init(GPIOD, &g);
   __disable_irq();
   while (1)
   {
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13); /* LD3 — fast blink = HAL Error_Handler */
+    for (volatile uint32_t d = 0; d < 200000U; d++) {
+    }
   }
   /* USER CODE END Error_Handler_Debug */
 }
