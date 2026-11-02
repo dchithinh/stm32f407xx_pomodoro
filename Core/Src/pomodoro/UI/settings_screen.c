@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "settings_screen.h"
 #include "event.h"
 #include "lvgl.h"
@@ -28,8 +29,15 @@ static lv_style_t btn_style;
 static void ui_setting_screen_set_bg_by_theme(lv_obj_t *parent);
 static void ui_setting_screen_init(void);
 
-static void ui_setting_screen_init()
+static void ui_setting_screen_init(void)
 {
+    static bool styles_ready;
+
+    if (styles_ready) {
+        return;
+    }
+    styles_ready = true;
+
     lv_style_init(&setting_section_label_style);
     lv_style_set_text_font(&setting_section_label_style, &lv_font_montserrat_22);
     lv_style_set_text_color(&setting_section_label_style, lv_color_hex(0x4169E1));
@@ -69,30 +77,43 @@ pomodoro_theme_e ui_get_theme(void) {
 }
 
 // Updated roller creation function
-lv_obj_t *setting_screen_create_roller(lv_obj_t *parent, int min, int max, int initial_value, char *unit)
+lv_obj_t *setting_screen_create_roller(lv_obj_t *parent, int min, int max, int initial_value, const char *unit)
 {
     static lv_style_t style_sel;
     static bool style_inited = false;
+    static char opts[256];
+    char *p;
+    char *end;
+    int i;
+
+    if (unit == NULL) {
+        unit = "";
+    }
 
     if (initial_value < min || initial_value > max) {
         initial_value = min;
     }
 
-    if (strlen(unit) + 2 + 1 + 1 > 7) {
-        LV_LOG_WARN("Unit string too long, truncating to 3 chars.\n");
-        unit[3] = '\0'; // Truncate to 3 characters
-    }
-    // Build options string
-    static char opts[150]; // Each "xx min\n" can be up to 7 chars, so 25*7=175 is safe.
-    char *p = opts;
-    for (int i = min; i <= max; i++) {
-        p += sprintf(p, "%d %s", i, unit);
-        if (i != max) *p++ = '\n';
+    p = opts;
+    end = opts + sizeof(opts) - 1U;
+    for (i = min; i <= max; i++) {
+        int n = snprintf(p, (size_t)(end - p), "%d %s", i, unit);
+        if (n < 0 || p + n >= end) {
+            LV_LOG_WARN("roller options truncated\n");
+            break;
+        }
+        p += n;
+        if (i != max) {
+            if (p + 1 >= end) {
+                break;
+            }
+            *p++ = '\n';
+        }
     }
     *p = '\0';
 
     lv_obj_t *roller = lv_roller_create(parent);
-    lv_roller_set_options(roller, opts, LV_ROLLER_MODE_INFINITE);
+    lv_roller_set_options(roller, opts, LV_ROLLER_MODE_NORMAL);
     lv_roller_set_visible_row_count(roller, 2);
 
     /* IMPORTANT: If applying styles before lv_roller_set_options(),

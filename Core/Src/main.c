@@ -22,7 +22,6 @@
 #include "stm32f4xx_hal_uart.h"
 #include "lvgl.h"
 #include "lv_conf.h"
-#include "lv_examples.h"
 #include "tft.h"
 #include "touchpad.h"
 #include "main_screen.h"
@@ -82,7 +81,7 @@ int main(void)
   SystemClock_Config();
 
   UART2_Init();
-  printf("\r\n[Pomodoro] app slot 0x08020000, SYSCLK=%lu Hz\r\n",
+  printf("\r\n[Pomodoro] app slot 0x08010000, SYSCLK=%lu Hz\r\n",
          (unsigned long)HAL_RCC_GetSysClockFreq());
 
   lv_init();

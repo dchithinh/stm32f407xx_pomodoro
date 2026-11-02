@@ -643,9 +643,14 @@ static void timer_tick_cb(lv_timer_t * timer) {
     timer_tick_handler();
 }
 
+static void show_settings_async(void *user_data)
+{
+    show_settings_screen((lv_obj_t *)user_data);
+}
+
 static void setting_event_cb(lv_event_t *e)
 {
+    LV_UNUSED(e);
     LV_LOG_USER("Moving to Settings page...\n");
-    show_settings_screen(main_cont);
-
+    lv_async_call(show_settings_async, main_cont);
 }

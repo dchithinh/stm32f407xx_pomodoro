@@ -100,7 +100,7 @@
 #else
 #define VECT_TAB_BASE_ADDRESS   FLASH_BASE
 #endif /* VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET         0x00020000U     /* App slot: 0x08020000 (128 KiB bootloader) */
+#define VECT_TAB_OFFSET         0x00010000U     /* App slot: 0x08010000 (64 KiB bootloader) */
 #endif /* USER_VECT_TAB_ADDRESS */
 /******************************************************************************/
 

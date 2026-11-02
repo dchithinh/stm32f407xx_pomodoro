@@ -1,8 +1,8 @@
 /*
- * Application image for stm32f4xx_sel_app_bl (bootloader at 0x08000000, 128 KiB).
- * Bootloader jumps to vector table at 0x08020000.
+ * Application image for stm32f4xx_sel_app_bl (bootloader at 0x08000000, 64 KiB).
+ * Bootloader jumps to vector table at 0x08010000.
  *
- * Standalone @ 0x08000000: use STM32F407VGTX_FLASH.ld instead.
+ * Standalone @ 0x08000000: use the board default FLASH.ld from CubeMX, not STM32F407VGTX_BL.ld.
  */
 ENTRY(Reset_Handler)
 
@@ -15,7 +15,7 @@ MEMORY
 {
   CCMRAM    (xrw)    : ORIGIN = 0x10000000,   LENGTH = 64K
   RAM       (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
-  FLASH     (rx)     : ORIGIN = 0x08020000,   LENGTH = 896K
+  FLASH     (rx)     : ORIGIN = 0x08010000,   LENGTH = 960K
 }
 
 SECTIONS

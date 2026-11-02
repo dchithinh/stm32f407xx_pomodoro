@@ -21,6 +21,7 @@ A **Pomodoro Timer** application built for the **STM32F407** microcontroller wit
 - [🍅 STM32F407 Pomodoro Timer with ILI9341 LCD](#-stm32f407-pomodoro-timer-with-ili9341-lcd)
   - [📋 Table of Contents](#-table-of-contents)
   - [🎯 Project Overview](#-project-overview)
+  - [📦 Bootloader app slot (flash address)](#-bootloader-app-slot-flash-address)
   - [🖥️ Try Before You Build - Windows Simulator](#️-try-before-you-build---windows-simulator)
   - [🛠️ Hardware Requirements](#️-hardware-requirements)
   - [🔌 Hardware Connections](#-hardware-connections)
@@ -59,6 +60,29 @@ This project was built for **learning purposes**, focusing on:
 - **Modular embedded software architecture**
 
 The Pomodoro Technique is a time management method that uses 25-minute work intervals followed by short breaks, helping improve focus and productivity.
+
+---
+
+## 📦 Bootloader app slot (flash address)
+
+This firmware is linked to run as an **application** behind the selectable-app bootloader, not at the default `0x08000000` reset vector.
+
+| Setting | Value |
+|---------|--------|
+| **Bootloader** | [stm32f407-app-selector](https://github.com/dchithinh/stm32f407-app-selector) (64 KB @ `0x08000000`) |
+| **This app** | **960 KB** slot @ **`0x08010000`** |
+| **Linker script** | `STM32F407VGTX_APP.ld` (IDE linker script) |
+| **Vector table** | `USER_VECT_TAB_ADDRESS` + `VECT_TAB_OFFSET = 0x00010000` in `Core/Src/system_stm32f4xx.c` |
+
+**Typical workflow**
+
+1. Flash the bootloader once from [stm32f407-app-selector](https://github.com/dchithinh/stm32f407-app-selector) at `0x08000000` (ST-Link / SWD).
+2. Build this project (**Release** recommended) and copy `Release/stm32f407xx_pomodoro.bin` (or `.elf`) to **`/apps/`** on the HAT microSD card.
+3. Reset: the bootloader menu installs the image into the app slot and runs it—or autoboots if a valid app is already flashed.
+
+**Direct ST-Link (without SD install):** program the `.bin` at start address **`0x08010000`**, not `0x08000000`. Flashing only the app binary at `0x08000000` will overwrite the bootloader.
+
+Standalone flash at `0x08000000` is **not** supported with the current linker script; use the bootloader or change the linker script and `VECT_TAB_OFFSET` back to a full-flash layout.
 
 ---
 
@@ -175,7 +199,14 @@ Touch calibration (min/max, invert) is in `bsp/lvgl/lv_drv_conf.h` (`XPT2046_*`)
    ```
 
 ### Building & Flashing the Project
-   Enjoy !!!!
+
+1. Open the project in **STM32CubeIDE** and confirm the linker script is **`STM32F407VGTX_APP.ld`**.
+2. Build **Release** (or Debug for development).
+3. Deploy using either path:
+   - **Bootloader (recommended):** copy `Release/stm32f407xx_pomodoro.bin` to SD **`/apps/`** and install from the [app selector](https://github.com/dchithinh/stm32f407-app-selector) UI.
+   - **ST-Link app only:** flash the `.bin` with load address **`0x08010000`** (bootloader must already be present at `0x08000000`).
+
+Debug UART (**115200** on USART2) prints a line confirming the app slot (`0x08010000`) on startup.
 
 ---
 
@@ -291,6 +322,7 @@ Contributions are welcome! Please follow these steps:
 - **[LVGL Team](https://lvgl.io/)** - Amazing graphics library
 - **[STMicroelectronics](https://www.st.com/)** - STM32 ecosystem and HAL library
 - **[stm32f407_tft_2.4inch_hat](https://github.com/dchithinh/pcb-lab/tree/main/stm32f407_tft_2.4inch_hat)** ([pcb-lab](https://github.com/dchithinh/pcb-lab)) — Discovery TFT HAT hardware this firmware is built for
+- **[stm32f407-app-selector](https://github.com/dchithinh/stm32f407-app-selector)** — Bootloader that programs and launches this app from microSD
 - **[MicroPomo](https://github.com/dchithinh/MicroPomo)** - Windows simulator for testing the Pomodoro app
 - **Embedded systems community** - For knowledge sharing and support
 
